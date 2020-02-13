@@ -1,5 +1,5 @@
 function out = PREoS(medium, find, in1, in2)
-% PREoS Peng-Robinson Equation of State
+% PREoS Peng-Robinson Equation of State for Pure Fluids
 %   out = PREoS(medium, find, in1, in2) Calculates the remainder of
 %   Pressure, Temperature, and Density depending on the selected inputs.
 %   
