@@ -3,7 +3,7 @@ function out = PREoS(medium, find, in1, in2)
 %   out = PREoS(medium, find, in1, in2) Calculates the remainder of
 %   Pressure, Temperature, and Density depending on the selected inputs.
 %   
-%   medium: "Methane", "Oxygen", "Nitrogen", "Air"
+%   medium: Methane, Oxygen, Nitrogen, Air, Water
 %   Input variables according to following table:
 %   find | "rho" |  "P"  |  "T"  |
 %    in1 |  "P"  |  "T"  |  "P"  |
@@ -21,44 +21,11 @@ function out = PREoS(medium, find, in1, in2)
 % Gas Constant
 R = 8314.46261815324;% J/kmol-K
 
-% Fluids Database
-if medium == "Methane"
-    % Formula: CH4
-    % CAS No.: 74828
-    Mw = 16.043;% g/mol
-    Tc = 190.564;% K
-    Pc = 4.59e6;% Pa
-    % Vc = 0.099;% m3/kmol
-    % Zc = 0.286;
-    w = 0.011;% Acentric Factor
-elseif medium == "Oxygen"
-    % Formula: O2
-    % CAS No.: 7782447
-    Mw = 31.999;% kg/kmol
-    Tc = 154.58;% K
-    Pc = 5.02e6;% Pa
-    % Vc = 0.074;% m3/kmol
-    % Zc = 0.287;
-    w = 0.020;% Acentric Factor
-elseif medium == "Nitrogen"
-    % Formula: N2
-    % CAS No.: 7727379
-    Mw = 28.014;% kg/kmol
-    Tc = 126.2;% K
-    Pc = 3.39e6;% Pa
-    % Vc = 0.089;% m3/kmol
-    % Zc = 0.288;
-    w = 0.037;% Acentric Factor
-elseif medium == "Air"
-    % Formula: 
-    % CAS No.: 132259100
-    Mw = 28.951;% kg/kmol
-    Tc = 132.45;% K
-    Pc = 3.79e6;% Pa
-    % Vc = 0.092;% m3/kmol
-    % Zc = 0.318;
-    w = 0.000;% Acentric Factor
-end
+% Get Fluid Properties from Medium
+Mw = medium.Mw;
+Tc = medium.Tc;
+Pc = medium.Pc;
+w = medium.w;
 
 % Calculate parameters applicable to all outputs
 a_Tc = 0.45724*R^2*Tc^2/Pc;% a at critical temp
