@@ -13,10 +13,14 @@ function out = PREoS(medium, find, in1, in2)
 %   rho: Density, kg/m^3
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 % Gas Constant
 R = 8314.46261815324;% J/kmol-K
 
 % Medium Database
+=======
+R = 8314.46261815324;% J/kmol-K, Gas Constant
+>>>>>>> 951959b993f20fbe3e4148029f1729f1acafa1d9
 =======
 R = 8314.46261815324;% J/kmol-K, Gas Constant
 >>>>>>> 951959b993f20fbe3e4148029f1729f1acafa1d9
@@ -58,8 +62,11 @@ elseif medium == "Air"
     w = 0.000;% Acentric Factor
 end
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 % Calculate parameters applicable to all outputs
+=======
+>>>>>>> 951959b993f20fbe3e4148029f1729f1acafa1d9
 =======
 >>>>>>> 951959b993f20fbe3e4148029f1729f1acafa1d9
 a_Tc = 0.45724*R^2*Tc^2/Pc;% a at critical temp
@@ -67,7 +74,11 @@ b = 0.07780*R*Tc/Pc;% b at critical temp = b at desired temp
 kap = 0.37464 + 1.54226*w - 0.26992*w^2;% Characteristic constant
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 % Calculate Output depending on equation form
+=======
+% Interpret equation form
+>>>>>>> 951959b993f20fbe3e4148029f1729f1acafa1d9
 =======
 % Interpret equation form
 >>>>>>> 951959b993f20fbe3e4148029f1729f1acafa1d9
@@ -79,7 +90,10 @@ if find == "P"
     P = (R*T)/(Vm - b) - a(T)/(Vm*(Vm+b) + b*(Vm - b));
     out = P;
 <<<<<<< HEAD
+<<<<<<< HEAD
     
+=======
+>>>>>>> 951959b993f20fbe3e4148029f1729f1acafa1d9
 =======
 >>>>>>> 951959b993f20fbe3e4148029f1729f1acafa1d9
 elseif find == "rho"
@@ -91,7 +105,11 @@ elseif find == "rho"
     Z = roots([1; B-1; A-3*B^2-2*B; B^3+B^2-A*B]);
     Z = Z(imag(Z)==0); % Discard imaginary roots
 <<<<<<< HEAD
+<<<<<<< HEAD
     
+=======
+    out = Z;
+>>>>>>> 951959b993f20fbe3e4148029f1729f1acafa1d9
 =======
     out = Z;
 >>>>>>> 951959b993f20fbe3e4148029f1729f1acafa1d9
@@ -100,7 +118,10 @@ elseif find == "rho"
         rho = Mw/Vm;% kg/m^3
         out = rho;
 <<<<<<< HEAD
+<<<<<<< HEAD
         
+=======
+>>>>>>> 951959b993f20fbe3e4148029f1729f1acafa1d9
 =======
 >>>>>>> 951959b993f20fbe3e4148029f1729f1acafa1d9
     elseif length(Z) > 1% If vapor & liquid
@@ -112,7 +133,10 @@ elseif find == "rho"
         rho_liq = Mw/Vm_liq;% kg/m^3
         out = [rho_vap; rho_liq];
 <<<<<<< HEAD
+<<<<<<< HEAD
         
+=======
+>>>>>>> 951959b993f20fbe3e4148029f1729f1acafa1d9
 =======
 >>>>>>> 951959b993f20fbe3e4148029f1729f1acafa1d9
     end
@@ -125,7 +149,10 @@ elseif find == "T"
     T = fzero(preos,Tc);
     out = T;
 <<<<<<< HEAD
+<<<<<<< HEAD
     
+=======
+>>>>>>> 951959b993f20fbe3e4148029f1729f1acafa1d9
 =======
 >>>>>>> 951959b993f20fbe3e4148029f1729f1acafa1d9
 end
