@@ -11,19 +11,25 @@ function out = PREoS(medium, find, in1, in2)
 %   P: Pressure, Pa
 %   T: Temperature, K
 %   rho: Density, kg/m^3
+%
+%   Sources:
+%   D. Peng and D. Robinson, "A New Two-Constant Equation of State", 
+%       Ind. Eng. Chem.,Fundam., Vol. 15, No. 1, 1976, pp. 59-64
+%   Section 2: Physical and Chemical Data, Perry's Chemical Engineers' 
+%       Handbook, Seventh Edition
 
 % Gas Constant
 R = 8314.46261815324;% J/kmol-K
 
-% Medium Database
+% Fluids Database
 if medium == "Methane"
     % Formula: CH4
     % CAS No.: 74828
     Mw = 16.043;% g/mol
     Tc = 190.564;% K
     Pc = 4.59e6;% Pa
-    Vc = 0.099;% m3/kmol
-    Zc = 0.286;
+    % Vc = 0.099;% m3/kmol
+    % Zc = 0.286;
     w = 0.011;% Acentric Factor
 elseif medium == "Oxygen"
     % Formula: O2
@@ -31,8 +37,8 @@ elseif medium == "Oxygen"
     Mw = 31.999;% kg/kmol
     Tc = 154.58;% K
     Pc = 5.02e6;% Pa
-    Vc = 0.074;% m3/kmol
-    Zc = 0.287;
+    % Vc = 0.074;% m3/kmol
+    % Zc = 0.287;
     w = 0.020;% Acentric Factor
 elseif medium == "Nitrogen"
     % Formula: N2
@@ -40,8 +46,8 @@ elseif medium == "Nitrogen"
     Mw = 28.014;% kg/kmol
     Tc = 126.2;% K
     Pc = 3.39e6;% Pa
-    Vc = 0.089;% m3/kmol
-    Zc = 0.288;
+    % Vc = 0.089;% m3/kmol
+    % Zc = 0.288;
     w = 0.037;% Acentric Factor
 elseif medium == "Air"
     % Formula: 
@@ -49,8 +55,8 @@ elseif medium == "Air"
     Mw = 28.951;% kg/kmol
     Tc = 132.45;% K
     Pc = 3.79e6;% Pa
-    Vc = 0.092;% m3/kmol
-    Zc = 0.318;
+    % Vc = 0.092;% m3/kmol
+    % Zc = 0.318;
     w = 0.000;% Acentric Factor
 end
 
@@ -59,13 +65,13 @@ a_Tc = 0.45724*R^2*Tc^2/Pc;% a at critical temp
 b = 0.07780*R*Tc/Pc;% b at critical temp = b at desired temp
 kap = 0.37464 + 1.54226*w - 0.26992*w^2;% Characteristic constant
 
-% Calculate Output depending on equation form
+% Calculate Output Requested
 if find == "P"
     T = in1;% K
     rho = in2;% kg/m^3
     Vm = Mw/rho;% m^3/kmol
     % Use typical form (Eq 4) of PREoS to find P explicitly
-    P = (R*T)/(Vm - b) - a(T)/(Vm*(Vm+b) + b*(Vm - b));
+    P = preos(T, Vm, b);
     out = P;
     
 elseif find == "rho"
@@ -76,7 +82,6 @@ elseif find == "rho"
     % Use cubic form of PREoS to find compressibility factor
     Z = roots([1; B-1; A-3*B^2-2*B; B^3+B^2-A*B]);
     Z = Z(imag(Z)==0); % Discard imaginary roots
-    
     if length(Z) == 1% If gas only
         Vm = Z(1)*R*T/P;% m^3/kmol
         rho = Mw/Vm;% kg/m^3
@@ -92,19 +97,26 @@ elseif find == "rho"
         out = [rho_vap; rho_liq];
         
     end
+    
 elseif find == "T"
     P = in1;% Pa
     rho = in2;% kg/m^3
     Vm = Mw/rho;% m^3/kmol
     % Find roots of typical form (Eq 4) of PREoS for T
-    preos = @(T) (R*T)/(Vm - b) - a(T)/(Vm*(Vm+b) + b*(Vm - b)) - P;
-    T = fzero(preos,Tc);
+    zero = @(T) preos(T, Vm, b) - P;
+    T = fzero(zero,Tc);
     out = T;
     
 end
 
+% a coefficient (used in all 3 
 function a_T = a(T)
     alpha = (1 + kap*(1-sqrt(T/Tc)))^2;% Dimensionless fxn of reduced temp
     a_T = a_Tc*alpha;% a at desired temp
+end
+
+% Conventional form of Peng-Robinson EoS (Peng Eq. 4)
+function P = preos(T, Vm, b)
+    P = (R*T)/(Vm - b) - a(T)/(Vm*(Vm+b) + b*(Vm - b));
 end
 end
