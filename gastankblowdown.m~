@@ -50,8 +50,8 @@ systable.P2(end) = Ptank0; systable.T2(end) = Ttank0;% Initial orifice condition
 Ptank = Ptank0;
 Ttank = Ttank0;% TODO: Add time-dependence & tank draining
 rhotank = rhotank0;
-tstep = 0.1;% sec
-store = table('Size',[1000 7],...
+tstep = 0.05;% sec
+store = table('Size',[300 7],...
     'VariableTypes',{'double','double','double','double','double','double','double'},...
     'VariableNames',{'t','Ptank','HVMF_P2','RGMF_P2','Ttank','HVMF_T2','RGMF_T2'});
 store.t(1) = 0;
@@ -84,11 +84,11 @@ store.RGMF_T2(itr) = systable.T2(2);
 itr = itr + 1;
 
 % Check if blowdown is finished 
-% If orifice is unchoked
-if systable.P2(end) < 101325*((Methane.gam+1)/2)^(Methane.gam/(Methane.gam-1))
+% If orifice is unchoked or t=15s
+if store.t(itr-1) >= 15 || systable.P2(end) < 101325*((Methane.gam+1)/2)^(Methane.gam/(Methane.gam-1))
     break
 end
-% If t > 
+
 
 % New Tank Properties
 mtank = rhotank*V - mdot*tstep;
@@ -102,3 +102,10 @@ Pfn = @(T) PREoS(Methane,"P",T,rhotank) - Ptank*(T/Ttank)^(Methane.gam/(Methane.
 Ttank = mean([Tll,Tul]);
 Ptank = PREoS(Methane,"P",Ttank,rhotank);
 end
+
+figure
+subplot(2,2,1)
+plot(store.t,store.RGMF_P2/1e5,'k','LineWidth',2)
+xlabel('Time, s')
+ylabel('Orifice Upstream Pressure, bar')
+ti

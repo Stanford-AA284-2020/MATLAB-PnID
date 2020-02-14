@@ -51,9 +51,9 @@ Ptank = Ptank0;
 Ttank = Ttank0;% TODO: Add time-dependence & tank draining
 rhotank = rhotank0;
 tstep = 0.05;% sec
-store = table('Size',[300 7],...
-    'VariableTypes',{'double','double','double','double','double','double','double'},...
-    'VariableNames',{'t','Ptank','HVMF_P2','RGMF_P2','Ttank','HVMF_T2','RGMF_T2'});
+store = table('Size',[301 8],...
+    'VariableTypes',{'double','double','double','double','double','double','double','double'},...
+    'VariableNames',{'t','Ptank','HVMF_P2','RGMF_P2','Ttank','HVMF_T2','RGMF_T2','mdot'});
 store.t(1) = 0;
 itr = 1;
 while true
@@ -81,6 +81,7 @@ store.RGMF_P2(itr) = systable.P2(2);
 store.Ttank(itr) = Ttank;
 store.HVMF_T2(itr) = systable.T2(1);
 store.RGMF_T2(itr) = systable.T2(2);
+store.mdot(itr) = mdot;
 itr = itr + 1;
 
 % Check if blowdown is finished 
@@ -103,5 +104,30 @@ Ttank = mean([Tll,Tul]);
 Ptank = PREoS(Methane,"P",Ttank,rhotank);
 end
 
-% figure
-% subplot
+%%
+figure
+subplot(2,3,1)
+sgtitle('Tank and Orifice Fluid Conditions During Blowdown')
+plot(store.t,store.Ptank/1e5,'k','LineWidth',2)
+xlabel('Time, s')
+ylabel('Tank Pressure, bar')
+
+subplot(2,3,2)
+plot(store.t,store.RGMF_P2/1e5,'k','LineWidth',2)
+xlabel('Time, s')
+ylabel('Orifice Upstream Pressure, bar')
+
+subplot(2,3,[3,6])
+plot(store.t,store.mdot,'k','LineWidth',2)
+xlabel('Time, s')
+ylabel('Mass Flow Rate, kg/s')
+
+subplot(2,3,4)
+plot(store.t,store.Ttank,'k','LineWidth',2)
+xlabel('Time, s')
+ylabel('Tank Temperature, K')
+
+subplot(2,3,5)
+plot(store.t,store.RGMF_T2,'k','LineWidth',2)
+xlabel('Time, s')
+ylabel('Orifice Upstream Temperature, K')
