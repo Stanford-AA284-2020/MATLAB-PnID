@@ -2,7 +2,7 @@
 
 FluidDatabase % Load in fluid properties
 
-% Tank Blowdown Method used in:
+% Method used in:
 %   Haque et al., Rapid depressurization of pressure vessels, J. Loss Prev.
 %       Process Ind., Vol 3, January 1990
 % - Select Pressure Decrement
@@ -46,12 +46,18 @@ systable.PartName(1) = "HVMF"; systable.Cv(1) = 0.69;
 systable.PartName(2) = "RGMF"; systable.Cv(2) = 0.3;
 systable.P2(end) = Ptank0; systable.T2(end) = Ttank0;% Initial orifice conditions
 
+%% Termination Conditions, Time Step
+mdot_target = 0.1081;% kg/s
+t_step = 0.05;% sec
+t_stop = 15;% sec
+p_choke = 101325*chokeratio(Methane.gam);% Pa
+
 %% Iterate as tank pressure drops
 Ptank = Ptank0;
 Ttank = Ttank0;% TODO: Add time-dependence & tank draining
 rhotank = rhotank0;
-tstep = 0.05;% sec
-store = table('Size',[301 8],...
+n_steps = t_stop*t_step+1;
+store = table('Size',[n_steps 8],...
     'VariableTypes',{'double','double','double','double','double','double','double','double'},...
     'VariableNames',{'t','Ptank','HVMF_P2','RGMF_P2','Ttank','HVMF_T2','RGMF_T2','mdot'});
 store.t(1) = 0;
@@ -73,7 +79,7 @@ mdot_opt = mean([mdotll,mdotul]);
 
 % Store values from iteration
 if itr ~= 1
-    store.t(itr) = store.t(itr-1)+tstep;
+    store.t(itr) = store.t(itr-1)+t_step;
 end
 store.Ptank(itr) = Ptank;
 store.HVMF_P2(itr) = systable.P2(1);
@@ -84,15 +90,13 @@ store.RGMF_T2(itr) = systable.T2(2);
 store.mdot(itr) = mdot;
 itr = itr + 1;
 
-% Check if blowdown is finished 
-% If orifice is unchoked or t=15s
-if store.t(itr-1) >= 15 || systable.P2(end) < 101325*((Methane.gam+1)/2)^(Methane.gam/(Methane.gam-1))
+% Check if blowdown is finished (mdot, time, orifice pressure criteria)
+if store.mdot(itr-1)<=mdot_target || store.t(itr-1)>=t_stop || store.RGMF_P2(itr-1)<p_choke
     break
 end
 
-
 % New Tank Properties
-mtank = rhotank*V - mdot*tstep;
+mtank = rhotank*V - mdot*t_step;
 rhotank = mtank/V;
 % Objective function comparing real-gas pressure to isentropic expansion
 % pressure, both as function of temperature. Use objective function to find
