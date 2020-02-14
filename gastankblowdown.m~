@@ -38,14 +38,15 @@ FluidDatabase % Load in fluid properties
 systable = table('Size',[2 6],...
     'VariableTypes',{'string','double','double','double','double','double'},...
     'VariableNames',{'PartName','Cv','P1','P2','T1','T2'});
-systable.PartName(1) = "HVMF"; systable.Cv(1) = 0.69;
+systable.PartName(1) = "HVMF"; systable.Cv(1) = 0.69*3;
 systable.PartName(2) = "RGMF"; systable.Cv(2) = 0.3;
 
 
 %% Initial tank parameters
 medium = Methane;
-V_tank = 0.049;% m^3, Standard K cylinder volume is 49 L
-A_orifice = pi*0.001^2;% Choked orifice area for 1100 psi upstream, 0.1081 kg/s
+V_tank = 0.049*3;% m^3, Standard K cylinder volume is 49 L
+D_orifice = 3.38;% mm
+A_orifice = pi*((D_orifice/1000)/2)^2;% m^2
 Ptank0 = convpres(2000,"psi","Pa");% Pa
 Ttank0 = 298.15;% K
 rhotank0 = PREoS(medium,"rho",Ptank0,Ttank0);% kg/m^3
@@ -53,9 +54,9 @@ rhotank0 = PREoS(medium,"rho",Ptank0,Ttank0);% kg/m^3
 
 %% Termination Conditions, Time Step
 mdot_target = 0.1081;% kg/s
-p_choke = 101325*chokeratio(medium.gam);% Pa
-t_step = 0.5;% sec
-t_stop = 25;% sec
+p_choke = 101325*chokeratio(medium.gam)*10;% Pa
+t_step = 0.25;% sec
+t_stop = 15;% sec
 n_steps = t_stop/t_step+1;
 
 
@@ -104,8 +105,9 @@ system = @(mdot) feedsystemmdot(systable, medium, Ptank, Ttank, A_orifice, mdot)
 mdot_opt = mean([mdotll,mdotul]);
 % Get updated system table for 'optimal' mass flow rate
 outs = feedsystemmdot(systable, medium, Ptank, Ttank, A_orifice, mdot_opt,'all outputs');
-dmdot = outs(1);
-mdot = ou, systable] = {outs}
+dmdot = outs{1};
+mdot = outs{2};
+systable = outs{3};
 
 
 % Store values from iteration
@@ -163,18 +165,21 @@ ylabel('Tank Pressure, bar')
 
 subplot(2,3,2)
 plot(store.t,store.RGMF_P2/1e5,'k','LineWidth',2)
-hold on
-plot(xlim(gca),[p_choke,p_choke],':k')
-plot([p_choke,p_choke],ylim(gca),':k')
-hold off
+% hold on
+% stoptime = interp1(store.RGMF_P2,store.t,p_choke);
+% plot(xlim(gca),[p_choke/1e5,p_choke/1e5],':k')
+% plot([stoptime,stoptime],ylim(gca),':k')
+% hold off
 xlabel('Time, s')
 ylabel('Orifice Upstream Pressure, bar')
 
 subplot(2,3,[3,6])% Show mdot large
 plot(store.t,store.mdot,'k','LineWidth',2)
+ylim = 
 hold on
 plot(xlim(gca),[mdot_target,mdot_target],':k')
-plot([mdot_target,mdot_target],ylim(gca),':k')
+stoptime = interp1(store.mdot,store.t,mdot_target);
+plot([stoptime,stoptime],ylim(gca),':k')
 hold off
 xlabel('Time, s')
 ylabel('Mass Flow Rate, kg/s')
