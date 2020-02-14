@@ -1,14 +1,17 @@
-function output = PREoS(medium, out, in1, in2)
+function out = PREoS(medium, find, in1, in2)
 % PREoS Peng-Robinson Equation of State for Pure Fluids
 %   out = PREoS(medium, find, in1, in2) Calculates the remainder of
 %   Pressure, Temperature, and Density depending on the selected inputs.
 %   
 %   medium: Methane, Oxygen, Nitrogen, Air, Water
 %   Input variables according to following table:
-%   |_out_|_in1_|_in2_|
-%   |"rho"| "P" | "T" |
-%   | "P" | "T" |"rho"|
-%   | "T" | "P" |"rho"|
+%   find | in1
+%   "rho"| "
+%    "P" |
+%    "T" |
+%   find | "rho" |  "P"  |  "T"  |
+%    in1 |  "P"  |  "T"  |  "P"  |
+%    in2 |  "T"  | "rho" | "rho" |
 %   P: Pressure, Pa
 %   T: Temperature, K
 %   rho: Density, kg/m^3
@@ -34,15 +37,15 @@ b = 0.07780*R*Tc/Pc;% b at critical temp = b at desired temp
 kap = 0.37464 + 1.54226*w - 0.26992*w^2;% Characteristic constant
 
 % Calculate Output Requested
-if out == "P"
+if find == "P"
     T = in1;% K
     rho = in2;% kg/m^3
     Vm = Mw/rho;% m^3/kmol
     % Use typical form (Eq 4) of PREoS to find P explicitly
     P = preos(T, Vm, b);
-    output = P;
+    out = P;
     
-elseif out == "rho"
+elseif find == "rho"
     P = in1;% Pa
     T = in2;% K
     A = a(T)*P/(R^2*T^2);
@@ -53,7 +56,7 @@ elseif out == "rho"
     if length(Z) == 1% If gas only
         Vm = Z(1)*R*T/P;% m^3/kmol
         rho = Mw/Vm;% kg/m^3
-        output = rho;
+        out = rho;
         
     elseif length(Z) > 1% If vapor & liquid
         warning('Mixed Phases')
@@ -63,18 +66,18 @@ elseif out == "rho"
         % Liquid
         Vm_liq = min(Z)*R*T/P;% m^3/kmol
         rho_liq = Mw/Vm_liq;% kg/m^3
-        output = [rho_vap; rho_liq];
+        out = [rho_vap; rho_liq];
         
     end
     
-elseif out == "T"
+elseif find == "T"
     P = in1;% Pa
     rho = in2;% kg/m^3
     Vm = Mw/rho;% m^3/kmol
     % Find roots of typical form (Eq 4) of PREoS for T
     zero = @(T) preos(T, Vm, b) - P;
     T = fzero(zero,Tc);
-    output = T;
+    out = T;
     
 end
 
