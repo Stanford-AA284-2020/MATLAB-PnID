@@ -1,4 +1,4 @@
-function [delta_mdot, mdot2, systable] = feedsystemmdot(systable, medium, Ptank, Ttank, A, mdot)
+function [delta_mdot, orificemdot, systable] = feedsystemmdot(systable, medium, Ptank, Ttank, A, mdot)
 % Propellant Feed System as function of mass flow
 %   Takes system definition table, working fluid, tank conditions, control
 %   orifice area, and mass flow rate.
@@ -19,6 +19,6 @@ function [delta_mdot, mdot2, systable] = feedsystemmdot(systable, medium, Ptank,
         end
         [systable.P2(i), systable.T2(i)] = valve(medium,mdot,systable.P1(i),systable.T1(i),systable.Cv(i));
     end
-    mdot2 = chokedorifice(A,medium.gam,medium.Mw,systable.P2(end),systable.T2(end));
-    delta_mdot = mdot - mdot2;
+    orificemdot = chokedorifice(A,medium.gam,medium.Mw,systable.P2(end),systable.T2(end));
+    delta_mdot = mdot - orificemdot;
 end

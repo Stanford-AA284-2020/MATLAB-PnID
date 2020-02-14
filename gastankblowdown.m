@@ -50,7 +50,12 @@ systable.P2(end) = Ptank0; systable.T2(end) = Ttank0;% Initial orifice condition
 Ptank = Ptank0;
 Ttank = Ttank0;% TODO: Add time-dependence & tank draining
 rhotank = rhotank0;
-tstep = 0.1;% sec
+tstep = 0.05;% sec
+store = table('Size',[300 7],...
+    'VariableTypes',{'double','double','double','double','double','double','double'},...
+    'VariableNames',{'t','Ptank','HVMF_P2','RGMF_P2','Ttank','HVMF_T2','RGMF_T2'});
+store.t(1) = 0;
+itr = 1;
 while true
 
 % Iterate to find dP through all parts, and mdot at orifice for given tank P & T
@@ -64,12 +69,26 @@ system = @(mdot) feedsystemmdot(systable, Methane, Ptank, Ttank, A, mdot);
 [mdotll, mdotul] = bisection(system,mdotll,mdotul);
 mdot_opt = mean([mdotll,mdotul]);
 % Get updated system table for 'optimal' mass flow rate
-[dmdot, mdot, systable] = feedsystemmdot(systable, mdot_opt, Methane, Ptank, Ttank, A);
+[dmdot, mdot, systable] = feedsystemmdot(systable, Methane, Ptank, Ttank, A, mdot_opt);
 
-% Check if blowdown is finished (orifice is unchoked)
-if systable.P2(end) < 101325*((Methane.gam+1)/2)^(Methane.gam/(Methane.gam-1))
+% Store values from iteration
+if itr ~= 1
+    store.t(itr) = store.t(itr-1)+tstep;
+end
+store.Ptank(itr) = Ptank;
+store.HVMF_P2(itr) = systable.P2(1);
+store.RGMF_P2(itr) = systable.P2(2);
+store.Ttank(itr) = Ttank;
+store.HVMF_T2(itr) = systable.T2(1);
+store.RGMF_T2(itr) = systable.T2(2);
+itr = itr + 1;
+
+% Check if blowdown is finished 
+% If orifice is unchoked or t=15s
+if store.t(itr-1) >= 15 || systable.P2(end) < 101325*((Methane.gam+1)/2)^(Methane.gam/(Methane.gam-1))
     break
 end
+
 
 % New Tank Properties
 mtank = rhotank*V - mdot*tstep;
@@ -82,5 +101,7 @@ Pfn = @(T) PREoS(Methane,"P",T,rhotank) - Ptank*(T/Ttank)^(Methane.gam/(Methane.
 [Tll, Tul] = bisection(Pfn,Tll,Tul);
 Ttank = mean([Tll,Tul]);
 Ptank = PREoS(Methane,"P",Ttank,rhotank);
-
 end
+
+% figure
+% subplot
