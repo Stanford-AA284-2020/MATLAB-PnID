@@ -31,12 +31,6 @@ FluidDatabase % Load in fluid properties
 % - Calculate P & T from density, assuming isentropic expansion
 % - Repeat
 
-%% Initial tank parameters
-V = 0.049;% m^3, Standard K cylinder volume is 49 L
-A = pi*0.002^2;% Choked orifice area for 1100 psi upstream, 0.1081 kg/s
-Ptank0 = convpres(2000,"psi","Pa");% Pa
-Ttank0 = 298.15;% K
-rhotank0 = PREoS(Methane,"rho",Ptank0,Ttank0);% kg/m^3
 
 %% Initialize system as set of parts, flow coefficients, P and T values
 systable = table('Size',[2 6],...
@@ -46,28 +40,56 @@ systable.PartName(1) = "HVMF"; systable.Cv(1) = 0.69;
 systable.PartName(2) = "RGMF"; systable.Cv(2) = 0.3;
 systable.P2(end) = Ptank0; systable.T2(end) = Ttank0;% Initial orifice conditions
 
+
+%% Initial tank parameters
+medium = Methane;
+V = 0.049;% m^3, Standard K cylinder volume is 49 L
+A = pi*0.002^2;% Choked orifice area for 1100 psi upstream, 0.1081 kg/s
+Ptank0 = convpres(2000,"psi","Pa");% Pa
+Ttank0 = 298.15;% K
+rhotank0 = PREoS(medium,"rho",Ptank0,Ttank0);% kg/m^3
+
+
 %% Termination Conditions, Time Step
 mdot_target = 0.1081;% kg/s
-t_step = 0.05;% sec
+t_step = 0.1;% sec
 t_stop = 15;% sec
-p_choke = 101325*chokeratio(Methane.gam);% Pa
+p_choke = 101325*chokeratio(medium.gam);% Pa
+
 
 %% Iterate as tank pressure drops
 Ptank = Ptank0;
 Ttank = Ttank0;% TODO: Add time-dependence & tank draining
 rhotank = rhotank0;
-n_steps = t_stop*t_step+1;
-store = table('Size',[n_steps 8],...
-    'VariableTypes',{'double','double','double','double','double','double','double','double'},...
-    'VariableNames',{'t','Ptank','HVMF_P2','RGMF_P2','Ttank','HVMF_T2','RGMF_T2','mdot'});
+n_steps = t_stop/t_step+1;
+
+
+% Assemble logging table from part names, to store P&T at outlet of each
+% part. t, mdot, and tank params are explicitly included for storage
+n_parts = length(systable.PartName);
+varnames = {'t','mdot','Ptank','Ttank'};
+for i=1:n_parts
+    varnames{2*(i+1)+1} = sprintf('%s_P2',systable.PartName(i));
+    varnames{2*(i+1)+2} = sprintf('%s_T2',systable.PartName(i));
+end
+vartypes = cell(1,length(varnames));
+vartypes(:) = {'double'};
+store = table('Size',[n_steps length(varnames)],...
+    'VariableTypes',vartypes,'VariableNames',varnames);
+%     'VariableTypes',{'double','double','double','double','double','double','double','double'},...
+%     'VariableNames',{'t','mdot','Ptank','Ttank','HVMF_P2','RGMF_P2','HVMF_T2','RGMF_T2'});
+
+
+% Initialize time and storage index
 store.t(1) = 0;
 itr = 1;
 while true
 
+    
 % Iterate to find dP through all parts, and mdot at orifice for given tank P & T
 % Create objective function based on feedsystemmdot as function only of
 % mdot to iteratively find actual system mdot
-system = @(mdot) feedsystemmdot(systable, Methane, Ptank, Ttank, A, mdot);
+system = @(mdot) feedsystemmdot(systable, medium, Ptank, Ttank, A, mdot);
 % Find a bracket of mdot values for which the flow rate delta crosses zero
 [mdotll, mdotul] = bracket_sign_change(system,0,0.1);
 % Find the "root" of the system via bisection to find mass flow input that
@@ -75,25 +97,32 @@ system = @(mdot) feedsystemmdot(systable, Methane, Ptank, Ttank, A, mdot);
 [mdotll, mdotul] = bisection(system,mdotll,mdotul);
 mdot_opt = mean([mdotll,mdotul]);
 % Get updated system table for 'optimal' mass flow rate
-[dmdot, mdot, systable] = feedsystemmdot(systable, Methane, Ptank, Ttank, A, mdot_opt);
+[dmdot, mdot, systable] = feedsystemmdot(systable, medium, Ptank, Ttank, A, mdot_opt);
+
 
 % Store values from iteration
 if itr ~= 1
     store.t(itr) = store.t(itr-1)+t_step;
 end
-store.Ptank(itr) = Ptank;
-store.HVMF_P2(itr) = systable.P2(1);
-store.RGMF_P2(itr) = systable.P2(2);
-store.Ttank(itr) = Ttank;
-store.HVMF_T2(itr) = systable.T2(1);
-store.RGMF_T2(itr) = systable.T2(2);
 store.mdot(itr) = mdot;
+store.Ptank(itr) = Ptank;
+store.Ttank(itr) = Ttank;
+% store.HVMF_P2(itr) = systable.P2(1);
+% store.RGMF_P2(itr) = systable.P2(2);
+% store.HVMF_T2(itr) = systable.T2(1);
+% store.RGMF_T2(itr) = systable.T2(2);
+for i=1:n_parts
+    store(itr,varnames(2*(i+1)+1)) = systable(i,'P2');
+    store(itr,varnames(2*(i+1)+2)) = systable(i,'T2');
+end
 itr = itr + 1;
+
 
 % Check if blowdown is finished (mdot, time, orifice pressure criteria)
 if store.mdot(itr-1)<=mdot_target || store.t(itr-1)>=t_stop || store.RGMF_P2(itr-1)<p_choke
     break
 end
+
 
 % New Tank Properties
 mtank = rhotank*V - mdot*t_step;
@@ -101,14 +130,15 @@ rhotank = mtank/V;
 % Objective function comparing real-gas pressure to isentropic expansion
 % pressure, both as function of temperature. Use objective function to find
 % tank pressure after time step.
-Pfn = @(T) PREoS(Methane,"P",T,rhotank) - Ptank*(T/Ttank)^(Methane.gam/(Methane.gam-1));
+Pfn = @(T) PREoS(medium,"P",T,rhotank) - Ptank*(T/Ttank)^(medium.gam/(medium.gam-1));
 [Tll, Tul] = bracket_sign_change(Pfn,Ttank*0.9,Ttank);
 [Tll, Tul] = bisection(Pfn,Tll,Tul);
 Ttank = mean([Tll,Tul]);
-Ptank = PREoS(Methane,"P",Ttank,rhotank);
+Ptank = PREoS(medium,"P",Ttank,rhotank);
 end
 
-%%
+
+%% Plot Simulation Output
 figure
 subplot(2,3,1)
 sgtitle('Tank and Orifice Fluid Conditions During Blowdown')
