@@ -51,10 +51,11 @@ Ptank = Ptank0;
 Ttank = Ttank0;% TODO: Add time-dependence & tank draining
 rhotank = rhotank0;
 tstep = 0.1;% sec
+while true
 
-%% Iterate to find dP through all parts, and mdot at orifice for given tank P & T
-% Create system as function exclusively of mdot, to find actual mdot
-% through orifice based on valve dP between tank and orifice. See
+% Iterate to find dP through all parts, and mdot at orifice for given tank P & T
+% Create objective function based on feedsystemmdot as function only of
+% mdot to iteratively find actual system mdot
 system = @(mdot) feedsystemmdot(systable, Methane, Ptank, Ttank, A, mdot);
 % Find a bracket of mdot values for which the flow rate delta crosses zero
 [mdotll, mdotul] = bracket_sign_change(system,0,0.1);
@@ -63,7 +64,23 @@ system = @(mdot) feedsystemmdot(systable, Methane, Ptank, Ttank, A, mdot);
 [mdotll, mdotul] = bisection(system,mdotll,mdotul);
 mdot_opt = mean([mdotll,mdotul]);
 % Get updated system table for 'optimal' mass flow rate
-[dmdot, mdot, systable] = feedsystemmdot(systable, mdot_opt, Methane, Ptank, Ttank, A)
+[dmdot, mdot, systable] = feedsystemmdot(systable, mdot_opt, Methane, Ptank, Ttank, A);
 
-%% New Tank Properties
-rhotank = rhotank
+% Check if blowdown is finished (orifice is unchoked)
+if systable.P2(end) < 101325*((Methane.gam+1)/2)^(Methane.gam/(Methane.gam-1))
+    break
+end
+
+% New Tank Properties
+mtank = rhotank*V - mdot*tstep;
+rhotank = mtank/V;
+% Objective function comparing real-gas pressure to isentropic expansion
+% pressure, both as function of temperature. Use objective function to find
+% tank pressure after time step.
+Pfn = @(T) PREoS(Methane,"P",T,rhotank) - Ptank*(T/Ttank)^(Methane.gam/(Methane.gam-1));
+[Tll, Tul] = bracket_sign_change(Pfn,Ttank*0.9,Ttank);
+[Tll, Tul] = bisection(Pfn,Tll,Tul);
+Ttank = mean([Tll,Tul]);
+Ptank = PREoS(Methane,"P",Ttank,rhotank);
+
+end
