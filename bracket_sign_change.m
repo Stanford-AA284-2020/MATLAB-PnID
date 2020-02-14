@@ -1,4 +1,4 @@
-function newbracket = bracket_sign_change(f, a, b)
+function [newbracketL, newbracketU] = bracket_sign_change(f, a, b)
 % Bracket Sign Change for Root Finding
 % Kochenderfer & Wheeler, Algorithms for Optimization, Algorithm 3.7
 
@@ -15,5 +15,6 @@ while f(a)*f(b) > 0
     a = center - half_width;
     b = center + half_width;
 end
-newbracket = [a,b];
+newbracketL = a;
+newbracketU = b;
 end

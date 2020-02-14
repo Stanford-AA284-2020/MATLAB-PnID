@@ -1,4 +1,4 @@
-function newbracket = bisection(f, a, b, varargin)
+function [newbracketL, newbracketU] = bisection(f, a, b, varargin)
 % Bisection Method for Root Finding
 % Kochenderfer & Wheeler, Algorithms for Optimization, Algorithm 3.6
 
@@ -32,5 +32,6 @@ while b - a > eps
         b=x;
     end
 end
-newbracket = [a b];
+newbracketL = a;
+newbracketU = b;
 end

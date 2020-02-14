@@ -30,7 +30,7 @@ FluidDatabase % Load in fluid properties
 
 %% Initial tank parameters
 % V = 0.049;% m^3, Standard K cylinder volume is 49 L
-% A = pi*0.001635^2;% Choked orifice area for 1100 psi upstream, 0.1081 kg/s
+A = pi*0.002^2;% Choked orifice area for 1100 psi upstream, 0.1081 kg/s
 Ptank0 = convpres(2000,"psi","Pa");% Pa
 Ttank0 = 298.15;% K
 % rho0 = PREoS(Methane,"rho",Ptank0,Ttank0);% kg/m^3
@@ -43,25 +43,19 @@ store.PartName(1) = "HVMF"; store.Cv(1) = 0.69;
 store.PartName(2) = "RGMF"; store.Cv(2) = 0.3;
 store.P2(end) = Ptank0; store.T2(end) = Ttank0;% Initial orifice conditions
 
-%% Iterate to find dP through all parts, and mdot at orifice
-mdotll = 0; mdotul = 0.5;
-
+%% Iterate to find dP through all parts, and mdot at orifice for given tank P & T
+Ptank = Ptank0;
+Ttank = Ttank0;% TODO: Add time-dependence & tank draining
+% System as function of mass flow
 system = @(mdot) systemmdot(store, mdot, Methane, Ptank, Ttank, A);
 
-% mdot_opt = golden_section_search(system, mdotll, mdotul, 100)
+[mdotll, mdotul] = bracket_sign_change(system,0,0.1)
+[mdotll, mdotul] = bisection(system,mdotll,mdotul)
+mdot_opt = mean([mdotll,mdotul])
 
-Ptank = Ptank0;
-Ttank = Ttank0;
-
-mds = 0.05:0.0001:0.25;
-dmds = zeros(length(mds),1);
-for i=1:length(mds)
-    dmds(i) = systemmdot(store,mds(i),Methane,Ptank,Ttank,A);
-end
-[dmdopt,idx] = min(abs(dmds));
-mdot_opt = mds(idx)
 [dmdot, mdot2, store] = systemmdot(store, mdot_opt, Methane, Ptank, Ttank, A)
 
+% System as function of mass flow
 function [delta_mdot, mdot2, store] = systemmdot(store,mdot,medium,Ptank,Ttank,A)
     for i=1:length(store.PartName)
         if i==1
