@@ -38,13 +38,13 @@ FluidDatabase % Load in fluid properties
 systable = table('Size',[2 6],...
     'VariableTypes',{'string','double','double','double','double','double'},...
     'VariableNames',{'PartName','Cv','P1','P2','T1','T2'});
-systable.PartName(1) = "HVMF"; systable.Cv(1) = 0.69*3;
+systable.PartName(1) = "HVMF"; systable.Cv(1) = 0.69*2;
 systable.PartName(2) = "RGMF"; systable.Cv(2) = 0.3;
 
 
 %% Initial tank parameters
 medium = Methane;
-V_tank = 0.049*3;% m^3, Standard K cylinder volume is 49 L
+V_tank = 0.049*2;% m^3, Standard K cylinder volume is 49 L
 D_orifice = 3.38;% mm
 A_orifice = pi*((D_orifice/1000)/2)^2;% m^2
 Ptank0 = convpres(2000,"psi","Pa");% Pa
@@ -201,4 +201,4 @@ ylabel('Orifice Upstream Temperature, K')
 
 %% Print mean time derivative of mass flow rate
 dmdotdt = mean(rmmissing(diff(store.mdot))/t_step);
-fprintf('d/dt mdot = %0.6f kg/s^2\n',dmdotdt)
+fprintf('d/dt mdot = %0.6f kg/s^2\nstop time = %0.2f s\n',dmdotdt,stoptime)
