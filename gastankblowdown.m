@@ -45,7 +45,7 @@ systable.PartName(2) = "RGMF"; systable.Cv(2) = 0.3;
 %% Initial tank parameters
 medium = Methane;
 V_tank = 0.049;% m^3, Standard K cylinder volume is 49 L
-A_orifice = pi*0.0021^2;% Choked orifice area for 1100 psi upstream, 0.1081 kg/s
+A_orifice = pi*0.002^2;% Choked orifice area for 1100 psi upstream, 0.1081 kg/s
 Ptank0 = convpres(2000,"psi","Pa");% Pa
 Ttank0 = 298.15;% K
 rhotank0 = PREoS(medium,"rho",Ptank0,Ttank0);% kg/m^3
@@ -53,21 +53,22 @@ rhotank0 = PREoS(medium,"rho",Ptank0,Ttank0);% kg/m^3
 
 %% Termination Conditions, Time Step
 mdot_target = 0.1081;% kg/s
-t_step = 0.5;% sec
-t_stop = 25;% sec
 p_choke = 101325*chokeratio(medium.gam);% Pa
-
-
-%% Iterate as tank pressure drops
-Ptank = Ptank0;
-Ttank = Ttank0;% TODO: Add time-dependence & tank draining
-rhotank = rhotank0;
-% Initial orifice conditions are tank conditions since no flow
-systable.P2(end) = Ptank0; systable.T2(end) = Ttank0;
+t_step = 0.1;% sec
+t_stop = 25;% sec
 n_steps = t_stop/t_step+1;
 
 
-% Assemble logging table from part names, to store P&T at outlet of each
+%% Initialize tank conditions
+Ptank = Ptank0;
+Ttank = Ttank0;
+rhotank = rhotank0;
+
+%% Initialize orifice conditions as tank conditions since no flow yet
+systable.P2(end) = Ptank0; systable.T2(end) = Ttank0;
+
+
+%% Assemble logging table from part names, to store P&T at outlet of each
 % part. t, mdot, and tank params are explicitly included for storage
 n_parts = length(systable.PartName);
 varnames = {'t','mdot','Ptank','Ttank'};
@@ -83,9 +84,11 @@ store = table('Size',[n_steps length(varnames)],...
 %     'VariableNames',{'t','mdot','Ptank','Ttank','HVMF_P2','RGMF_P2','HVMF_T2','RGMF_T2'});
 
 
-% Initialize time and storage index
+%% Initialize time and storage index
 store.t(1) = 0;
 itr = 1;
+
+%% Iterate as tank pressure drops
 while true
 
     
@@ -94,13 +97,16 @@ while true
 % mdot to iteratively find actual system mdot
 system = @(mdot) feedsystemmdot(systable, medium, Ptank, Ttank, A_orifice, mdot);
 % Find a bracket of mdot values for which the flow rate delta crosses zero
-[mdotll, mdotul] = bracket_sign_change(system,0,0.1);
+[mdotll, mdotul] = bracket_sign_change(system,1e-3,0.1);
 % Find the "root" of the system via bisection to find mass flow input that
 % corresponds to orifice mass flow.
 [mdotll, mdotul] = bisection(system,mdotll,mdotul);
 mdot_opt = mean([mdotll,mdotul]);
 % Get updated system table for 'optimal' mass flow rate
-[dmdot, mdot, systable] = feedsystemmdot(systable, medium, Ptank, Ttank, A_orifice, mdot_opt);
+outs = feedsystemmdot(systable, medium, Ptank, Ttank, A_orifice, mdot_opt,'all outputs');
+dmdot = outs{1};
+mdot = outs{2};
+systable = outs{3};
 
 
 % Store values from iteration
@@ -121,8 +127,8 @@ end
 itr = itr + 1;
 
 
-% Check if blowdown is finished (mdot, time, orifice pressure criteria)
-if store.mdot(itr-1)<=mdot_target || store.t(itr-1)>=t_stop || store.RGMF_P2(itr-1)<p_choke
+% Check if blowdown is finished
+if store.t(itr-1)>=t_stop
     break
 end
 
@@ -146,7 +152,7 @@ for i=1:n_steps
         store{i,:} = NaN;
     end
 end
-rmmissing(store);
+store = rmmissing(store);
 
 %% Plot Simulation Output
 figure
@@ -158,11 +164,19 @@ ylabel('Tank Pressure, bar')
 
 subplot(2,3,2)
 plot(store.t,store.RGMF_P2/1e5,'k','LineWidth',2)
+hold on
+plot(xlim(gca),[p_choke,p_choke],':k')
+% plot([],ylim(gca),':k')
+hold off
 xlabel('Time, s')
 ylabel('Orifice Upstream Pressure, bar')
 
 subplot(2,3,[3,6])% Show mdot large
 plot(store.t,store.mdot,'k','LineWidth',2)
+hold on
+plot(xlim(gca),[mdot_target,mdot_target],':k')
+% plot([],ylim(gca),':k')
+hold off
 xlabel('Time, s')
 ylabel('Mass Flow Rate, kg/s')
 

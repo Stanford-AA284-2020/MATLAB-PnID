@@ -1,4 +1,4 @@
-function output = feedsystemmdot(systable, medium, Ptank, Ttank, A, mdot, varargin)
+function [delta_mdot, orificemdot, systable] = feedsystemmdot(systable, medium, Ptank, Ttank, A, mdot)
 % Propellant Feed System as function of mass flow
 %   Takes system definition table, working fluid, tank conditions, control
 %   orifice area, and mass flow rate.
@@ -18,22 +18,12 @@ function output = feedsystemmdot(systable, medium, Ptank, Ttank, A, mdot, vararg
             systable.T1(i) = systable.T2(i-1);
         end
         try
-            outs = valve(medium,mdot,systable.P1(i),systable.T1(i),systable.Cv(i));
-            systable.P2(i) = outs(1);
-            systable.T2(i) = outs(2);
-        catch % If valve is choked, take choked mass flow as system mdot
-            mdotout = valve(medium,mdot,systable.P1(i),systable.T1(i),systable.Cv(i));
+            [systable.P2(i), systable.T2(i)] = valve(medium,mdot,systable.P1(i),systable.T1(i),systable.Cv(i));
+        catch
+            mdot = valve(medium,mdot,systable.P1(i),systable.T1(i),systable.Cv(i));
             break
         end
     end
-    if exist('mdotout','var') == 0 % If no valves are choked, orifice sets output mdot
-        mdotout = chokedorifice(A,medium.gam,medium.Mw,systable.P2(end),systable.T2(end));
-        delta_mdot = mdot - mdotout;
-    end
-    
-    if ~isempty(varargin)
-        output = {delta_mdot, mdotout, systable};
-    else
-        output = delta_mdot;
-    end
+    orificemdot = chokedorifice(A,medium.gam,medium.Mw,systable.P2(end),systable.T2(end));
+    delta_mdot = mdot - orificemdot;
 end
