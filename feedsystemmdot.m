@@ -28,8 +28,9 @@ function output = feedsystemmdot(systable, medium, Ptank, Ttank, A, mdot, vararg
     end
     if exist('mdotout','var') == 0 % If no valves are choked, orifice sets output mdot
         mdotout = chokedorifice(A,medium.gam,medium.Mw,systable.P2(end),systable.T2(end));
-        delta_mdot = mdot - mdotout;
     end
+    % If valves are choked, valve choking sets mass flow out
+    delta_mdot = mdot - mdotout;
     
     if ~isempty(varargin)
         output = {delta_mdot, mdotout, systable};

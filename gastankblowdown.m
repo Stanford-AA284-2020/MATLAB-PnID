@@ -45,7 +45,8 @@ systable.PartName(2) = "RGMF"; systable.Cv(2) = 0.3;
 %% Initial tank parameters
 medium = Methane;
 V_tank = 0.049;% m^3, Standard K cylinder volume is 49 L
-A_orifice = pi*0.002^2;% Choked orifice area for 1100 psi upstream, 0.1081 kg/s
+D_orifice = 3.35;% mm
+A_orifice = pi*((D_orifice/1000)/2)^2;% m^2
 Ptank0 = convpres(2000,"psi","Pa");% Pa
 Ttank0 = 298.15;% K
 rhotank0 = PREoS(medium,"rho",Ptank0,Ttank0);% kg/m^3
@@ -54,8 +55,8 @@ rhotank0 = PREoS(medium,"rho",Ptank0,Ttank0);% kg/m^3
 %% Termination Conditions, Time Step
 mdot_target = 0.1081;% kg/s
 p_choke = 101325*chokeratio(medium.gam);% Pa
-t_step = 0.1;% sec
-t_stop = 25;% sec
+t_step = 0.25;% sec
+t_stop = 15;% sec
 n_steps = t_stop/t_step+1;
 
 
@@ -165,7 +166,7 @@ ylabel('Tank Pressure, bar')
 subplot(2,3,2)
 plot(store.t,store.RGMF_P2/1e5,'k','LineWidth',2)
 hold on
-plot(xlim(gca),[p_choke,p_choke],':k')
+plot(xlim(gca),[p_choke/1e5,p_choke/1e5],':k')
 % plot([],ylim(gca),':k')
 hold off
 xlabel('Time, s')
