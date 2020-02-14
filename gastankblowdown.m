@@ -38,7 +38,7 @@ FluidDatabase % Load in fluid properties
 systable = table('Size',[2 6],...
     'VariableTypes',{'string','double','double','double','double','double'},...
     'VariableNames',{'PartName','Cv','P1','P2','T1','T2'});
-systable.PartName(1) = "HVMF"; systable.Cv(1) = 0.69*2;
+systable.PartName(1) = "HVMF"; systable.Cv(1) = 0.69;
 systable.PartName(2) = "RGMF"; systable.Cv(2) = 0.3;
 
 
@@ -140,7 +140,7 @@ Ttank = mean([Tll,Tul]);
 Ptank = PREoS(medium,"P",Ttank,rhotank);
 end
 
-%% Clear empty table rows if terminated early to streamline plotting
+%% Clear empty table rows if terminated early
 for i=1:n_steps
     if store{i,:} == 0
         store{i,:} = NaN;
@@ -161,7 +161,7 @@ plot(store.t,store.RGMF_P2/1e5,'k','LineWidth',2)
 xlabel('Time, s')
 ylabel('Orifice Upstream Pressure, bar')
 
-subplot(2,3,[3,6])
+subplot(2,3,[3,6])% Show mdot large
 plot(store.t,store.mdot,'k','LineWidth',2)
 xlabel('Time, s')
 ylabel('Mass Flow Rate, kg/s')
