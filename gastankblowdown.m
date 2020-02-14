@@ -1,5 +1,7 @@
 %% Gas Tank Blowdown Simulation
 
+close all; clear all;
+
 FluidDatabase % Load in fluid properties
 
 % Method used in:
@@ -36,15 +38,14 @@ FluidDatabase % Load in fluid properties
 systable = table('Size',[2 6],...
     'VariableTypes',{'string','double','double','double','double','double'},...
     'VariableNames',{'PartName','Cv','P1','P2','T1','T2'});
-systable.PartName(1) = "HVMF"; systable.Cv(1) = 0.69;
+systable.PartName(1) = "HVMF"; systable.Cv(1) = 0.69*2;
 systable.PartName(2) = "RGMF"; systable.Cv(2) = 0.3;
-systable.P2(end) = Ptank0; systable.T2(end) = Ttank0;% Initial orifice conditions
 
 
 %% Initial tank parameters
 medium = Methane;
-V = 0.049;% m^3, Standard K cylinder volume is 49 L
-A = pi*0.002^2;% Choked orifice area for 1100 psi upstream, 0.1081 kg/s
+V_tank = 0.049;% m^3, Standard K cylinder volume is 49 L
+A_orifice = pi*0.0021^2;% Choked orifice area for 1100 psi upstream, 0.1081 kg/s
 Ptank0 = convpres(2000,"psi","Pa");% Pa
 Ttank0 = 298.15;% K
 rhotank0 = PREoS(medium,"rho",Ptank0,Ttank0);% kg/m^3
@@ -52,8 +53,8 @@ rhotank0 = PREoS(medium,"rho",Ptank0,Ttank0);% kg/m^3
 
 %% Termination Conditions, Time Step
 mdot_target = 0.1081;% kg/s
-t_step = 0.1;% sec
-t_stop = 15;% sec
+t_step = 0.5;% sec
+t_stop = 25;% sec
 p_choke = 101325*chokeratio(medium.gam);% Pa
 
 
@@ -61,6 +62,8 @@ p_choke = 101325*chokeratio(medium.gam);% Pa
 Ptank = Ptank0;
 Ttank = Ttank0;% TODO: Add time-dependence & tank draining
 rhotank = rhotank0;
+% Initial orifice conditions are tank conditions since no flow
+systable.P2(end) = Ptank0; systable.T2(end) = Ttank0;
 n_steps = t_stop/t_step+1;
 
 
@@ -89,7 +92,7 @@ while true
 % Iterate to find dP through all parts, and mdot at orifice for given tank P & T
 % Create objective function based on feedsystemmdot as function only of
 % mdot to iteratively find actual system mdot
-system = @(mdot) feedsystemmdot(systable, medium, Ptank, Ttank, A, mdot);
+system = @(mdot) feedsystemmdot(systable, medium, Ptank, Ttank, A_orifice, mdot);
 % Find a bracket of mdot values for which the flow rate delta crosses zero
 [mdotll, mdotul] = bracket_sign_change(system,0,0.1);
 % Find the "root" of the system via bisection to find mass flow input that
@@ -97,7 +100,7 @@ system = @(mdot) feedsystemmdot(systable, medium, Ptank, Ttank, A, mdot);
 [mdotll, mdotul] = bisection(system,mdotll,mdotul);
 mdot_opt = mean([mdotll,mdotul]);
 % Get updated system table for 'optimal' mass flow rate
-[dmdot, mdot, systable] = feedsystemmdot(systable, medium, Ptank, Ttank, A, mdot_opt);
+[dmdot, mdot, systable] = feedsystemmdot(systable, medium, Ptank, Ttank, A_orifice, mdot_opt);
 
 
 % Store values from iteration
@@ -125,8 +128,8 @@ end
 
 
 % New Tank Properties
-mtank = rhotank*V - mdot*t_step;
-rhotank = mtank/V;
+mtank = rhotank*V_tank - mdot*t_step;
+rhotank = mtank/V_tank;
 % Objective function comparing real-gas pressure to isentropic expansion
 % pressure, both as function of temperature. Use objective function to find
 % tank pressure after time step.
@@ -137,6 +140,13 @@ Ttank = mean([Tll,Tul]);
 Ptank = PREoS(medium,"P",Ttank,rhotank);
 end
 
+%% Clear empty table rows if terminated early to streamline plotting
+for i=1:n_steps
+    if store{i,:} == 0
+        store{i,:} = NaN;
+    end
+end
+rmmissing(store);
 
 %% Plot Simulation Output
 figure
@@ -165,3 +175,7 @@ subplot(2,3,5)
 plot(store.t,store.RGMF_T2,'k','LineWidth',2)
 xlabel('Time, s')
 ylabel('Orifice Upstream Temperature, K')
+
+%% Print mean time derivative of mass flow rate
+dmdotdt = mean(rmmissing(diff(store.mdot))/t_step);
+fprintf('d/dt mdot = %0.6f kg/s^2\n',dmdotdt)
