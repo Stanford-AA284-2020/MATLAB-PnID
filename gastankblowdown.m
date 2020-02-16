@@ -38,13 +38,13 @@ FluidDatabase % Load in fluid properties
 systable = table('Size',[2 6],...
     'VariableTypes',{'string','double','double','double','double','double'},...
     'VariableNames',{'PartName','Cv','P1','P2','T1','T2'});
-systable.PartName(1) = "HVMF"; systable.Cv(1) = 0.69*2;
+systable.PartName(1) = "HVMF"; systable.Cv(1) = 0.69;
 systable.PartName(2) = "RGMF"; systable.Cv(2) = 0.3;
 
 
 %% Initial tank parameters
 medium = Methane;
-V_tank = 0.049*2;% m^3, Standard K cylinder volume is 49 L
+V_tank = 0.049;% m^3, Standard K cylinder volume is 49 L
 D_orifice = 3.38;% mm
 A_orifice = pi*((D_orifice/1000)/2)^2;% m^2
 Ptank0 = convpres(2000,"psi","Pa");% Pa
@@ -53,7 +53,7 @@ rhotank0 = PREoS(medium,"rho",Ptank0,Ttank0);% kg/m^3
 
 
 %% Termination Conditions, Time Step
-mdot_target = 0.1081;% kg/s
+mdot_target = 0.079;% kg/s
 p_choke = 101325*chokeratio(medium.gam)*10;% Pa
 t_step = 0.25;% sec
 t_stop = 15;% sec

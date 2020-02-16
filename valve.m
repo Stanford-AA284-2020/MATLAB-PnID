@@ -2,8 +2,8 @@ function output = valve(medium, mdot, P1, T1, Cv)
 % valve Outlet P & T
 %   [P2, T2] = valve(medium, mdot, P1, T1, Cv) Calculates pressure and
 %   temperature drop across a flow control device defined by its flow
-%   coefficient Cv. If valve is choked, returns choked flow rate instead of
-%   pressure and temperature downstream.
+%   coefficient Cv. If valve is choked, returns choked mass flow rate 
+%   instead of pressure and temperature downstream.
 %
 %   Formulas for dP based on Cv are from Swagelok Technical
 %   Bulletin MS-06-84-E Rev. 4 (2007), which is itself derived from ISA 
@@ -12,11 +12,11 @@ function output = valve(medium, mdot, P1, T1, Cv)
 %   Vol. 2, 1989.
 
     rho1 = PREoS(medium, "rho", P1, T1);% Fluid density at P1, T1
+    
     if length(rho1) > 1
         error('Mixed Phases - Check for Cavitation')
-    end
     
-    if rho1 > 500% If likely liquid, use liquid Cv formula from Swagelok
+    elseif rho1 > 500 % If likely liquid, use liquid formula from Swagelok
         % Calculate pressure drop across valve for incompressible fluid
         N1 = 14.42;% Unit coefficient, bar & L/min
         Gf = rho1/1000;% Specific Gravity relative to Water at 4C
