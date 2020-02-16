@@ -1,4 +1,4 @@
-function output = regulator(medium, P1, T1, Cv, P2reg)
+function output = regulator(medium, mdot, P1, T1, Cv, P2reg)
 % regulator Outlet P & T
 %   output = regulator(medium, P1, T1, Cv, P2reg) Calculates pressure and
 %   temperature drop across a flow control device defined by its flow
@@ -16,18 +16,19 @@ function output = regulator(medium, P1, T1, Cv, P2reg)
     
     if length(rho1) > 1
         error('Mixed Phases - Check for Cavitation')
+        
     elseif rho1 > 500 % If likely liquid
         error('Liquid flow through regulator')
         
     else
-        % Calculate pressure drop across valve for compressible fluid
+        % Calculate pressure drop across regulator for compressible fluid
         N2 = 6950;% Unit coefficient, bar & std. L/min
         P1b = P1/1e5;% bar, Converted from Pa
         Gg = medium.Mw/28.96;% Specific Gravity relative to Air
         SLPM2kgps = PREoS(medium,"rho",101325,273.15)/(1000*60);
         q = mdot/SLPM2kgps;% SLPM Vol flow
         q_choke = 0.471*N2*Cv*P1b*sqrt(1/(Gg*T1));% Flow thru choked valve
-        if q > q_choke% If valve flow is choked, output choked mass flow
+        if q > q_choke % If regulator is choked, output choked mass flow
             output = q_choke*SLPM2kgps;
             return
         end

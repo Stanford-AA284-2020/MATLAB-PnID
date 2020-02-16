@@ -36,12 +36,12 @@ function output = valve(medium, mdot, P1, T1, Cv)
         SLPM2mdot = PREoS(medium,"rho",101325,273.15)/(1000*60);
         q = mdot/SLPM2mdot;% SLPM Vol flow
         q_choke = 0.471*N2*Cv*P1b*sqrt(1/(Gg*T1));% Flow thru choked valve
-        if q > q_choke% If valve flow is choked, output choked mass flow
+        if q > q_choke % If valve is choked, output choked mass flow
             output = q_choke*SLPM2mdot;
             return
         end
         
-        % Find dP numerically within non-choked bounds
+        % If not choked, find dP numerically within non-choked bounds
         % Objective Function: Formulation in Swagelok Tech Bulletin - q
         qfn = @(dP) abs(N2*Cv*P1b*(1-2*dP/(3*P1b))*sqrt(dP/(P1b*Gg*T1))-q);
         dP = fminbnd(qfn,0,P1b*(1-1/1.8));% Golden section search for min
