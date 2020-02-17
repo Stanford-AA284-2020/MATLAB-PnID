@@ -23,7 +23,7 @@ P2_reg = 95e5;% Pa
 % A_orif = orifice_size(Methane,mdot_target,P2_reg,280);
 % D_orif = 2*1000*sqrt(A_orif/pi);% mm
 % Explicit Orifice Size
-D_orif = 2.8;% mm
+D_orif = 2.65;% mm
 A_orif = pi*(D_orif/(2*1000))^2;% m^2
 Cd_orif = 0.61;% Sharp-edged plate orifice in high-Re limit
 
@@ -43,14 +43,14 @@ systab{3,1:2}=["BVMF1","valve"];systab.Cv(3)=6.0;systab.A(3)=pi*(0.281*0.0254)^2
 systab{4,1:2}=["ORMF","orifice"];systab.Cd(4)=Cd_orif;systab.A(4)=A_orif;% Flow Control Orifice
 systab{5,1:2}=["CKMF","valve"];systab.Cv(5)=1.9;% CheckAll U3CSSTF0.500SS check valve
 systab{6,1:2}=["BVMF2","valve"];systab.Cv(6)=6.0;systab.A(6)=pi*(0.281*0.0254)^2;% Swagelok SS-44S6
-systab{7,1:2}=["in","orifice"];systab.Cd(7)=Cd_injF;systab.A(7)=A_injF;% Main Injector Methane Orifices
+systab{7,1:2}=["injector","orifice"];systab.Cd(7)=Cd_injF;systab.A(7)=A_injF;% Main Injector Methane Orifices
 
 
 % Initial tank parameters
 medium = Methane;
 V_tank = 0.049;% m^3, Standard K cylinder volume is 49 L
 Ptank0 = convpres(2000,"psi","Pa");% Pa
-Ttank0 = 273.15+25;% K
+Ttank0 = 273.15+30;% K
 rhotank0 = PREoS(medium,"rho",Ptank0,Ttank0);% kg/m^3
 
 
@@ -178,31 +178,20 @@ close(wbar)
 
 %% Plot Simulation Output as mdot, in & out P & T
 figure
-subplot(2,3,1)
+subplot(2,2,1)
 sgtitle('Tank and Orifice Fluid Conditions During Blowdown')
 plot(logtab.t,logtab.Ptank/1e5,'k','LineWidth',2)
 grid on
 xlabel('Time, s')
 ylabel('Tank Pressure, bar')
 
-subplot(2,3,4)
+subplot(2,2,3)
 plot(logtab.t,logtab.Ttank,'k','LineWidth',2)
 grid on
 xlabel('Time, s')
 ylabel('Tank Temperature, K')
 
-subplot(2,3,2)
-plot(logtab.t,logtab.fuel_inj_P2/1e5,'k','LineWidth',2)
-grid on
-% hold on
-% stoptime = interp1(logtab.RGMF_P2,logtab.t,p_choke);
-% plot(xlim(gca),[p_choke/1e5,p_choke/1e5],':k')
-% plot([stoptime,stoptime],ylim(gca),':k')
-% hold off
-xlabel('Time, s')
-ylabel('Injector Downstream Pressure, bar')
-
-subplot(2,3,[3,6])% Show mdot large
+subplot(2,2,[2,4])% Show mdot large
 plot(logtab.t,logtab.mdot,'k','LineWidth',2)
 grid on
 ylim([logtab.mdot(end)*0.99,logtab.mdot(1)*1.01])
@@ -214,11 +203,22 @@ ylim([logtab.mdot(end)*0.99,logtab.mdot(1)*1.01])
 xlabel('Time, s')
 ylabel('Mass Flow Rate, kg/s')
 
-subplot(2,3,5)
-plot(logtab.t,logtab.fuel_inj_T2,'k','LineWidth',2)
-grid on
-xlabel('Time, s')
-ylabel('Injector Downstream Temperature, K')
+% subplot(2,3,2)
+% plot(logtab.t,logtab.injector_P2/1e5,'k','LineWidth',2)
+% grid on
+% % hold on
+% % stoptime = interp1(logtab.RGMF_P2,logtab.t,p_choke);
+% % plot(xlim(gca),[p_choke/1e5,p_choke/1e5],':k')
+% % plot([stoptime,stoptime],ylim(gca),':k')
+% % hold off
+% xlabel('Time, s')
+% ylabel('Injector Downstream Pressure, bar')
+
+% subplot(2,3,5)
+% plot(logtab.t,logtab.injector_T2,'k','LineWidth',2)
+% grid on
+% xlabel('Time, s')
+% ylabel('Injector Downstream Temperature, K')
 
 %% Plot Simulation Output as station conditions
 P_idxs = [3,5:2:length(varnames)];
@@ -240,13 +240,16 @@ ylabel('Time, s')
 zlabel('Pressure, bar')
 
 figure
-plot(xs,station_Ps(1,:),'DisplayName','t = 0 s','LineWidth',2)
+plot(xs,station_Ps(1,:),'-k','DisplayName','t = 0 s','LineWidth',2)
 hold on
-plot(xs,station_Ps(end,:),'DisplayName','t = 15 s','LineWidth',2)
+plot(xs,station_Ps(find(logtab.t == 5),:),'--k','DisplayName','t = 5 s','LineWidth',2)
+plot(xs,station_Ps(find(logtab.t == 10),:),'-.k','DisplayName','t = 10 s','LineWidth',2)
+plot(xs,station_Ps(end,:),':k','DisplayName','t = 15 s','LineWidth',2)
 title('Pressure Drop Through Main Methane Feed System')
 xlabel('Component')
 ylabel('Pressure, bar')
 legend('Location','northeast')
+% xticks(xs)
 xticklabels(Plabels)
 grid on
 hold off

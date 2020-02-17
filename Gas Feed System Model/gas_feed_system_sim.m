@@ -238,6 +238,7 @@ title('Pressure Drop Through Main Methane Feed System')
 xlabel('Component')
 ylabel('Time, s')
 zlabel('Pressure, bar')
+xticklabels(Plabels)
 
 figure
 plot(xs,station_Ps(1,:),'-k','DisplayName','t = 0 s','LineWidth',2)
@@ -249,7 +250,12 @@ title('Pressure Drop Through Main Methane Feed System')
 xlabel('Component')
 ylabel('Pressure, bar')
 legend('Location','northeast')
-xticks(xs)
+% xticks(xs)
 xticklabels(Plabels)
 grid on
 hold off
+
+%% Print key outputs
+fprintf('Injector Outlet Pressure: %0.4f bar\n',logtab.injector_P2(end)/1e5)
+fprintf('                    mdot: %0.4f kg/s\n',logtab.mdot(end))
+fprintf('Chamber Pressure at mdot: %0.4f bar\n',lin_reg_Pc(logtab.mdot(end))/1e5)
