@@ -26,8 +26,10 @@ P2_reg = 95e5;% Pa
 D_orif = 2.65;% mm
 A_orif = pi*(D_orif/(2*1000))^2;% m^2
 Cd_orif = 0.61;% Sharp-edged plate orifice in high-Re limit
+% Cd_orif = 0.9975;% Large-Radius flow nozzle
 
-A_injF = orifice_size(Methane,lin_reg_mdot(Pc_target),0.2,0.61,Pc_target/0.8,210);% m^2
+% A_injF = orifice_size(Methane,lin_reg_mdot(Pc_target),0.4,0.61,41.8e5,224);% m^2
+A_injF = 0.95e-5;% m^2
 Cd_injF = 0.61;% Sharp-edged plate orifice in high-Re limit
 
 
@@ -259,3 +261,4 @@ hold off
 fprintf('Injector Outlet Pressure: %0.4f bar\n',logtab.injector_P2(end)/1e5)
 fprintf('                    mdot: %0.4f kg/s\n',logtab.mdot(end))
 fprintf('Chamber Pressure at mdot: %0.4f bar\n',lin_reg_Pc(logtab.mdot(end))/1e5)
+disp(systab)
