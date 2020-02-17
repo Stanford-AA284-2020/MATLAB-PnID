@@ -6,7 +6,7 @@ close all; clear all;
 FluidDatabase
 
 %% Load in Pc values & associated params
-PcTrends = readtable('/Users/JBR132/Documents/_Stanford/AA284B Propulsion System Design Lab/Propellant-Trades/GCH4_LOX_1inThroat/PcTrends1inthroat.csv');
+PcTrends = readtable('PcTrends1inthroat.csv');
 % plot(PcTrends.mdotF,PcTrends.Pc)
 % Linear Fit to get Pc from mdot
 lin_reg_Pc = @(mdot) interp1(PcTrends.mdotF,PcTrends.Pc,mdot);
@@ -29,7 +29,7 @@ Cd_orif = 0.61;% Sharp-edged plate orifice in high-Re limit
 % Cd_orif = 0.9975;% Large-Radius flow nozzle
 
 % A_injF = orifice_size(Methane,lin_reg_mdot(Pc_target),0.4,0.61,41.8e5,224);% m^2
-A_injF = 0.95e-5;% m^2
+A_injF = 0.97e-5;% m^2
 Cd_injF = 0.61;% Sharp-edged plate orifice in high-Re limit
 
 
