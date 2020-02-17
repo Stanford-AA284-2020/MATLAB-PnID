@@ -1,6 +1,6 @@
 function output = orifice(medium, mdot, P1, T1, Cd, A)
 % orifice Outlet P & T
-%   output = orifice(medium, P1, T1, Cd, A) Calculates pressure and
+%   output = orifice(medium, mdot, P1, T1, Cd, A) Calculates pressure and
 %   temperature drop across a flow control device defined by its discharge
 %   coefficient Cd and orifice area A. If orifice is choked, returns choked
 %   mass flow rate instead of pressure and temperature downstream.

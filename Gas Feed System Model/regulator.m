@@ -1,10 +1,11 @@
 function output = regulator(medium, mdot, P1, T1, Cv, P2reg)
 % regulator Outlet P & T
-%   output = regulator(medium, P1, T1, Cv, P2reg) Calculates pressure and
+%   output = regulator(medium, mdot, P1, T1, Cv, P2reg) Calculates pressure and
 %   temperature drop across a flow control device defined by its flow
 %   coefficient Cv and regulated outlet pressure P2reg. If regulator is 
 %   choked, returns choked mass flow rate instead of pressure and 
-%   temperature downstream.
+%   temperature downstream. Droop is applied to P2reg based on mass flow
+%   rate, according to linear fit of Tescom catalog flow tables.
 %
 %   Formulas for dP based on Cv are from Swagelok Technical
 %   Bulletin MS-06-84-E Rev. 4 (2007), which is itself derived from ISA 
@@ -33,9 +34,9 @@ function output = regulator(medium, mdot, P1, T1, Cv, P2reg)
             return
         end
         
-        % If not choked, P2 = P2reg
-        % ASSUMING regulator is actively controlled to eliminate droop
-        P2 = P2reg;
+        % If not choked, P2 <= P2reg
+        % Use droop from Tescom 26-2064D24A270 (catalog flow tables)
+        P2 = min([P2reg - 20349855.5149402*mdot, P1]);
         % Calculate outlet temperature, assuming isentropic expansion
         T2 = T1*(P2/P1)^((medium.gam-1)/medium.gam);
         output = [P2, T2];

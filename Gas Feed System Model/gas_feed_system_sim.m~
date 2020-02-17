@@ -208,5 +208,5 @@ xlabel('Time, s')
 ylabel('Injector Downstream Temperature, K')
 
 %% Print mean time derivative of mass flow rate
-% dmdotdt = mean(rmmissing(diff(logtab.mdot))/t_step);
+dmdotdt = mean(rmmissing(diff(logtab.mdot))/t_step);
 % fprintf('d/dt mdot = %0.6f kg/s^2\nstop time = %0.2f s\n',dmdotdt,stoptime)
