@@ -1,4 +1,4 @@
-function output = regulator(medium, mdot, P1, T1, Cv, P2reg)
+function output = regulator(medium, mdot, P1, T1, Cv, RegP2, RegDroop)
 % regulator Outlet P & T
 %   output = regulator(medium, mdot, P1, T1, Cv, P2reg) Calculates pressure and
 %   temperature drop across a flow control device defined by its flow
@@ -30,12 +30,14 @@ function output = regulator(medium, mdot, P1, T1, Cv, P2reg)
         q = mdot/SLPM2kgps;% SLPM Vol flow
         q_choke = 0.471*N2*Cv*P1b*sqrt(1/(Gg*T1));% Flow thru choked valve
         % If not choked, P2 <= P2reg
-        % Use droop from Tescom 26-2064D24A270 (catalog flow tables)
-        P2 = min([P2reg - 20349855.5149402*mdot, P1]);
-        chokeP2 = P1/chokeratio(medium.gam);
+        P2 = RegP2 - RegDroop*mdot;
+%         chokeP2 = P1/chokeratio(medium.gam);
         
-        if q > q_choke || P2 <= chokeP2 % If regulator is choked, output choked mass flow
-            output = q_choke*SLPM2kgps;
+        if q > q_choke %|| P2 <= chokeP2 % If regulator is choked, output choked mass flow
+            output = q_choke*SLPM2kgps;% kg/s
+            return
+        elseif P1 <= P2 % If upstream pressure is too low, regulator will lock up
+            output = 0;% kg/s
             return
         end
         

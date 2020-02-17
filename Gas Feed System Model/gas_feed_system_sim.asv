@@ -1,74 +1,65 @@
-% Gas Feed System Simulation
+%% Gas Feed System Simulation
 
 close all; clear all;
 
-%% Load in fluid properties
+% Load in fluid properties
 FluidDatabase
 
 %% Load in Pc values & associated params
 PcTrends = readtable('PcTrends1inthroat.csv');
-PcTrends = [repelem({0},length(PcTrends{1,:}));PcTrends];
 % plot(PcTrends.mdotF,PcTrends.Pc)
 % Linear Fit to get Pc from mdot
-mdot2Pc = @(mdot) interp1(PcTrends.mdotF,PcTrends.Pc,mdot);
-Pc2mdot = @(Pc) interp1(PcTrends.Pc,PcTrends.mdotF,Pc);
+lin_reg_Pc = @(mdot) interp1(PcTrends.mdotF,PcTrends.Pc,mdot);
+lin_reg_mdot = @(Pc) interp1(PcTrends.Pc,PcTrends.mdotF,Pc);
 
 
-%% Build system as table of parts, parameters, P & T values
-
-% MAIN INJECTOR METHANE
+%% System Design Params
 Pc_target = 10e5;% Pa, 10 bar
-mdot_target = Pc2mdot(Pc_target);% kg/s
+mdot_target = lin_reg_mdot(Pc_target);% kg/s
 
-% RGMF_P2_reg = 95e5;% Pa
-% RGMF_droop = 20349856;% Pa/(kg/s), Regulator outlet pressure droop from Tescom 26-2064D24A270 (catalog flow tables)
-% D_orif = 2.65;% mm, Flow Control Orifice Size
-% A_orif = pi*(D_orif/(2*1000))^2;% m^2
-% Cd_orif = 0.61;% Sharp-edged plate orifice in high-Re limit
-% % A_injF = orifice_size(Methane,Pc2mdot(Pc_target),0.4,0.61,41.8e5,224);% m^2
-% A_injF = 0.97e-5;% m^2
-% Cd_injF = 0.61;% Sharp-edged plate orifice in high-Re limit
-% 
-% n_parts = 7;
-% systab = table('Size',[n_parts 12],...
-%     'VariableTypes',[repelem({'string'},2),repelem({'double'},9),{'string'}],...
-%     'VariableNames',{'PartName','Type','Cv','RegP2','RegDroop','Cd','A','P1','P2','T1','T2','Choked'});
-% systab.Choked = repelem("N",n_parts)';
-% systab{1,1:2}=["HVMF","valve"];systab.Cv(1)=0.69;% Sherwood GV cylinder valve
-% systab{2,1:2}=["RGMF","regulator"];systab.Cv(2)=0.3;systab.RegP2(2)=RGMF_P2_reg;systab.RegDroop(2)=RGMF_droop;% Tescom 26-2095TA470AN
-% systab{3,1:2}=["BVMF1","valve"];systab.Cv(3)=6.0;systab.A(3)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
-% systab{4,1:2}=["ORMF","orifice"];systab.Cd(4)=Cd_orif;systab.A(4)=A_orif;% Flow Control Orifice
-% systab{5,1:2}=["CKMF","valve"];systab.Cv(5)=1.9;% CheckAll U3CSSTF0.500SS check valve
-% systab{6,1:2}=["BVMF2","valve"];systab.Cv(6)=6.0;systab.A(6)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
-% systab{7,1:2}=["injector","orifice"];systab.Cd(7)=Cd_injF;systab.A(7)=A_injF;% Main Injector Methane Orifices
+P2_reg = 95e5;% Pa
 
+
+% Flow Control Orifice Size
+D_orif = 2.65;% mm
+A_orif = pi*(D_orif/(2*1000))^2;% m^2
+Cd_orif = 0.61;% Sharp-edged plate orifice in high-Re limit
+% Cd_orif = 0.9975;% Large-Radius flow nozzle
+
+% A_injF = orifice_size(Methane,lin_reg_mdot(Pc_target),0.4,0.61,41.8e5,224);% m^2
+A_injF = 0.97e-5;% m^2
+Cd_injF = 0.61;% Sharp-edged plate orifice in high-Re limit
+
+
+% Build system as table of parts, parameters, P & T values
+% MAIN INJECTOR METHANE
+n_parts = 7;
+systab = table('Size',[n_parts 11],...
+    'VariableTypes',[repelem({'string'},2),repelem({'double'},8),{'string'}],...
+    'VariableNames',{'PartName','Type','Cv','P2reg','Cd','A','P1','P2','T1','T2','Choked'});
+systab.Choked = repelem("N",length(systab.Choked))';
+systab{1,1:2}=["HVMF","valve"];systab.Cv(1)=0.69;% Sherwood GV cylinder valve
+systab{2,1:2}=["RGMF","regulator"];systab.Cv(2)=0.3;systab.P2reg(2)=P2_reg;% Tescom 26-2095TA470AN
+systab{3,1:2}=["BVMF1","valve"];systab.Cv(3)=6.0;systab.A(3)=pi*(0.281*0.0254)^2;% Swagelok SS-44S6
+systab{4,1:2}=["ORMF","orifice"];systab.Cd(4)=Cd_orif;systab.A(4)=A_orif;% Flow Control Orifice
+systab{5,1:2}=["CKMF","valve"];systab.Cv(5)=1.9;% CheckAll U3CSSTF0.500SS check valve
+systab{6,1:2}=["BVMF2","valve"];systab.Cv(6)=6.0;systab.A(6)=pi*(0.281*0.0254)^2;% Swagelok SS-44S6
+systab{7,1:2}=["injector","orifice"];systab.Cd(7)=Cd_injF;systab.A(7)=A_injF;% Main Injector Methane Orifices
 
 % IGNITER METHANE
-RGIF_P2_reg = 95e5;% Pa
-RGIF_droop = 111924205;% Pa/(kg/s), Regulator outlet pressure droop from Victor SR4J
-meter_Cv = 0.16;% Metering Valve Cv<=0.16
-Cd_igF = 0.61;% Sharp-edged plate orifice in high-Re limit
-A_igF = 7.59E-07;% m^2, From igniter spreadsheet
+
 n_parts = 7;
-systab = table('Size',[n_parts 12],...
-    'VariableTypes',[repelem({'string'},2),repelem({'double'},9),{'string'}],...
-    'VariableNames',{'PartName','Type','Cv','RegP2','RegDroop','Cd','A','P1','P2','T1','T2','Choked'});
-systab.Choked = repelem("N",n_parts)';
+systab = table('Size',[n_parts 11],...
+    'VariableTypes',[repelem({'string'},2),repelem({'double'},8),{'string'}],...
+    'VariableNames',{'PartName','Type','Cv','P2reg','Cd','A','P1','P2','T1','T2','Choked'});
+systab.Choked = repelem("N",length(systab.Choked))';
 systab{1,1:2}=["HVMF","valve"];systab.Cv(1)=0.69;% Sherwood GV cylinder valve
-systab{2,1:2}=["RGIF","regulator"];systab.Cv(2)=0.1147;systab.RegP2(2)=RGIF_P2_reg;systab.RegDroop(2)=RGIF_droop;% Victor SR4J
-systab{3,1:2}=["BVIF","valve"];systab.Cv(3)=6.0;systab.A(3)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
-systab{4,1:2}=["NVIF","valve"];systab.Cv(4)=meter_Cv;% Swagelok SS-4L2-MH Flow Metering Valve, Vernier Handle
+systab{2,1:2}=["RGIF","regulator"];systab.Cv(2)=0.3;systab.P2reg(2)=P2_reg;% Tescom 26-2095TA470AN
+systab{3,1:2}=["BVIF","valve"];systab.Cv(3)=6.0;systab.A(3)=pi*(0.281*0.0254)^2;% Swagelok SS-44S6
+systab{4,1:2}=["NVIF","valve"];systab.Cv(4)=;% Swagelok SS-4L2-MH Flow Metering Valve, Vernier Handle
 systab{5,1:2}=["CKIF","valve"];systab.Cv(5)=1.9;% CheckAll U3CSSTF.500SS check valve
-systab{6,1:2}=["SVIF","valve"];systab.Cv(6)=0.04;systab.A(6)=pi*(3/64/2*0.0254)^2;% Parker Skinner 71216SN2FU00N0C111C2 Solenoid Valve
-systab{7,1:2}=["igniter","orifice"];systab.Cd(7)=Cd_igF;systab.A(7)=A_igF;% Igniter Methane Orifice
-
-
-%% Simulation Setup
-
-% Termination time, time step
-t_step = 0.25;% sec
-t_stop = 15;% sec
-n_steps = t_stop/t_step+1;
+systab{6,1:2}=["BVMF2","valve"];systab.Cv(6)=6.0;systab.A(6)=pi*(0.281*0.0254)^2;% Swagelok SS-44S6
+systab{7,1:2}=["injector","orifice"];systab.Cd(7)=Cd_injF;systab.A(7)=A_injF;% Main Injector Methane Orifices
 
 
 % Initial tank parameters
@@ -77,6 +68,14 @@ V_tank = 0.049;% m^3, Standard K cylinder volume is 49 L
 Ptank0 = convpres(2000,"psi","Pa");% Pa
 Ttank0 = 273.15+25;% K
 rhotank0 = PREoS(medium,"rho",Ptank0,Ttank0);% kg/m^3
+
+
+%% Simulation Setup
+
+% Termination time, time step
+t_step = 0.25;% sec
+t_stop = 15;% sec
+n_steps = t_stop/t_step+1;
 
 
 % Assemble logging table from part names, to logtab P&T at outlet of each
@@ -112,7 +111,7 @@ mdot_term = 1e-6;% convergence criterion
 mdot_test = mdot_step; % Initialize mdot_test
 while true
     % Propagate P & T through system for mdot_test
-    mdot_out = 1;% Reset mdot_out > mdot_test to avoid choke boolean later
+    mdot_out = mdot_test;
     for itm=1:n_parts
         % Get P1, T1 from nearest upstream element
         if itm==1
@@ -128,7 +127,7 @@ while true
         if systab.Type(itm) == "valve"
             itm_out = valve(medium,mdot_test,systab.P1(itm),systab.T1(itm),systab.Cv(itm));
         elseif systab.Type(itm) == "regulator"
-            itm_out = regulator(medium,mdot_test,systab.P1(itm),systab.T1(itm),systab.Cv(itm),systab.RegP2(itm),systab.RegDroop(itm));
+            itm_out = regulator(medium,mdot_test,systab.P1(itm),systab.T1(itm),systab.Cv(itm),systab.P2reg(itm));
         elseif systab.Type(itm) == "orifice"
             itm_out = orifice(medium,mdot_test,systab.P1(itm),systab.T1(itm),systab.Cd(itm),systab.A(itm)); 
         end
@@ -139,7 +138,7 @@ while true
             systab.T2(itm) = itm_out(2);
         else % if choked, get output mdot & log choke location
             mdot_out = itm_out;
-            systab.Choked = repelem("N",n_parts)';
+            systab.Choked = repelem("N",length(systab.Choked))';
             systab.Choked(itm) = "Y";
             break
         end
@@ -275,5 +274,5 @@ hold off
 %% Print key outputs
 fprintf('Injector Outlet Pressure: %0.4f bar\n',logtab.injector_P2(end)/1e5)
 fprintf('                    mdot: %0.4f kg/s\n',logtab.mdot(end))
-fprintf('Chamber Pressure at mdot: %0.4f bar\n',mdot2Pc(logtab.mdot(end))/1e5)
+fprintf('Chamber Pressure at mdot: %0.4f bar\n',lin_reg_Pc(logtab.mdot(end))/1e5)
 disp(systab)
