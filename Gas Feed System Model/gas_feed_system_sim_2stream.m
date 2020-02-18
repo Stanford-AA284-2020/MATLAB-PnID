@@ -40,13 +40,13 @@ tank_sys{1,1:2}=["HVF","valve"];tank_sys.Cv=HVF_Cv;
 inj_Pc_targ = 10e5;% Pa, 10 bar
 inj_mdot_targ = Pc2mdot(inj_Pc_targ);% kg/s
 
-RGMF_P2_reg = 95e5;% Pa
+RGMF_P2_reg = 50e5;% Pa
 RGMF_droop = 20349856;% Pa/(kg/s), Regulator outlet pressure droop from Tescom 26-2064D24A270 (catalog flow tables)
-orif_D = 2.65;% mm, Flow Control Orifice Size
+orif_D = 3.85;% mm, Flow Control Orifice Size
 orif_A = pi*(orif_D/(2*1000))^2;% m^2
 orif_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
 % A_injF = orifice_size(Methane,Pc2mdot(Pc_target),0.4,0.61,41.8e5,224);% m^2
-injF_A = 0.97e-5;% m^2
+injF_A = 2.75e-5;% m^2
 injF_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
 
 n_inj_pt = 6;
@@ -381,8 +381,8 @@ hold off
 
 
 %% Print key outputs
-fprintf('Main Injector mdot: %0.4f kg/s\n',logtab.inj_mdot(1))
-fprintf('Main Injector Target mdot: %0.4f kg/s\n',inj_mdot_targ)
+fprintf('Main Injector mdot: %0.6f kg/s\n',logtab.inj_mdot(1))
+fprintf('Main Injector Target mdot: %0.6f kg/s\n',inj_mdot_targ)
 fprintf('Main Combustion Chamber Pressure at mdot: %0.2f bar\n',mdot2Pc(logtab.inj_mdot(1))/1e5)
 fprintf('Main Injector Outlet Pressure: %0.2f bar\n',logtab.inj_P2(1)/1e5)
 fprintf('Main Combustion Chamber Target Pressure: %0.2f bar\n\n',inj_Pc_targ/1e5)
