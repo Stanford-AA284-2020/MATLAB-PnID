@@ -14,6 +14,14 @@ mdot2Pc = @(mdot) interp1(PcTrends.mdotF,PcTrends.Pc,mdot);
 Pc2mdot = @(Pc) interp1(PcTrends.Pc,PcTrends.mdotF,Pc);
 
 
+%% Initial tank parameters
+medium = Methane;
+V_tank = 0.049;% m^3, Standard K cylinder volume is 49 L
+Ptank = convpres(2000,"psi","Pa");% Pa
+Ttank = 273.15+25;% K
+rhotank = PREoS(medium,"rho",Ptank,Ttank);% kg/m^3
+
+
 %% Build system as table of parts, parameters, P & T values
 
 % Blank System Table
@@ -21,7 +29,7 @@ make_systab = @(n_parts) table('Size',[n_parts 12],...
     'VariableTypes',[repelem({'string'},2),repelem({'double'},9),{'string'}],...
     'VariableNames',{'PartName','Type','Cv','RegP2','RegDroop','Cd','A','P1','P2','T1','T2','Choked'});
 
-% TANK VALVE
+% TANK & HAND VALVE
 HVF_Cv=0.69;% Sherwood GV cylinder valve
 tank_sys = make_systab(1);
 tank_sys.Choked = "N";
@@ -56,9 +64,9 @@ inj_sys{6,1:2}=["inj","orifice"];inj_sys.Cd(6)=injF_Cd;inj_sys.A(6)=injF_A;% Mai
 ig_Pc_targ = convpres(200,"psi","Pa");% Pa
 ig_mdot_targ = 0.00110279054076074;% kg/s
 
-RGIF_P2_reg = 95e5;% Pa
+RGIF_P2_reg = 32e5;% Pa
 RGIF_droop = 111924205;% Pa/(kg/s), Regulator outlet pressure droop from Victor SR4J
-meter_Cv = 0.16;% Metering Valve Cv<=0.16
+meter_Cv = 0.0098;% Metering Valve Cv<=0.03
 igF_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
 igF_A = 7.59E-07;% m^2, From igniter spreadsheet
 
@@ -67,7 +75,7 @@ ig_sys = make_systab(n_ig_pt);
 ig_sys.Choked = repelem("N",n_ig_pt)';
 ig_sys{1,1:2}=["RGIF","regulator"];ig_sys.Cv(1)=0.1147;ig_sys.RegP2(1)=RGIF_P2_reg;ig_sys.RegDroop(1)=RGIF_droop;% Victor SR4J
 ig_sys{2,1:2}=["BVIF","valve"];ig_sys.Cv(2)=6.0;ig_sys.A(2)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
-ig_sys{3,1:2}=["NVIF","valve"];ig_sys.Cv(3)=meter_Cv;% Swagelok SS-4L2-MH Flow Metering Valve, Vernier Handle
+ig_sys{3,1:2}=["NVIF","valve"];ig_sys.Cv(3)=meter_Cv;% Swagelok SS-4MG2-MH Flow Metering Valve, Vernier Handle
 ig_sys{4,1:2}=["CKIF","valve"];ig_sys.Cv(4)=1.9;% CheckAll U3CSSTF.500SS check valve
 ig_sys{5,1:2}=["SVIF","valve"];ig_sys.Cv(5)=0.04;ig_sys.A(5)=pi*(3/64/2*0.0254)^2;% Parker Skinner 71216SN2FU00N0C111C2 Solenoid Valve
 ig_sys{6,1:2}=["ig","orifice"];ig_sys.Cd(6)=igF_Cd;ig_sys.A(6)=igF_A;% Igniter Methane Orifice
@@ -76,17 +84,9 @@ ig_sys{6,1:2}=["ig","orifice"];ig_sys.Cd(6)=igF_Cd;ig_sys.A(6)=igF_A;% Igniter M
 %% Simulation Setup
 
 % Termination time, time step
-t_step = 0.25;% sec
-t_stop = 15;% sec
+t_step = 0.2;% sec
+t_stop = 10;% sec
 n_steps = t_stop/t_step+1;
-
-
-% Initial tank parameters
-medium = Methane;
-V_tank = 0.049;% m^3, Standard K cylinder volume is 49 L
-Ptank = convpres(2000,"psi","Pa");% Pa
-Ttank = 273.15+25;% K
-rhotank = PREoS(medium,"rho",Ptank,Ttank);% kg/m^3
 
 
 % Assemble logging table from part names, to logtab P&T at outlet of each
@@ -108,11 +108,8 @@ logtab = table('Size',[n_steps length(varnames)],...
 logtab.t(1) = 0;
 
 
-% Make waitbar
-wbar = waitbar(0,'Running Simulation');
-
-
 %% Iterate on tank conditions until t_stop
+wbar = waitbar(0,'Running Simulation');
 for itr=1:n_steps
 
 % injector settings
@@ -300,12 +297,12 @@ ylabel('Total Methane Flow Rate, kg/s')
 
 subplot(2,4,[3,7])% Show mdots large
 plot(logtab.t,logtab.inj_mdot,'k','LineWidth',2)
-ylim([0,logtab.sys_mdot(1)*1.1])
+ylim([0,logtab.inj_mdot(1)*1.1])
 ylabel('Main Injector Methane Flow Rate, kg/s')
 
 subplot(2,4,[4,8])% Show mdots large
 plot(logtab.t,logtab.ig_mdot,'k','LineWidth',2)
-ylim([0,logtab.sys_mdot(1)*1.1])
+ylim([0,logtab.ig_mdot(1)*1.1])
 ylabel('Igniter Methane Flow Rate, kg/s')
 
 
@@ -327,14 +324,15 @@ title('Pressure Drop Through Main Injector Methane Feed')
 xlabel('Component')
 ylabel('Time, s')
 zlabel('Pressure, bar')
+xticks(xs)
 xticklabels(Plabels)
 
 figure
 plot(xs,inj_Ps(1,:),'-k','DisplayName','t = 0 s','LineWidth',2)
 hold on
-plot(xs,inj_Ps(find(logtab.t == 5),:),'--k','DisplayName','t = 5 s','LineWidth',2)
-plot(xs,inj_Ps(find(logtab.t == 10),:),'-.k','DisplayName','t = 10 s','LineWidth',2)
-plot(xs,inj_Ps(end,:),':k','DisplayName','t = 15 s','LineWidth',2)
+plot(xs,interp1(logtab.t,inj_Ps,3.33333),'--k','DisplayName','t = 3.33 s','LineWidth',2)
+plot(xs,interp1(logtab.t,inj_Ps,6.66667),'-.k','DisplayName','t = 6.66 s','LineWidth',2)
+plot(xs,inj_Ps(end,:),':k','DisplayName','t = 10 s','LineWidth',2)
 title('Pressure Drop Through Main Injector Methane Feed')
 xlabel('Component')
 ylabel('Pressure, bar')
@@ -363,14 +361,15 @@ title('Pressure Drop Through Igniter Methane Feed')
 xlabel('Component')
 ylabel('Time, s')
 zlabel('Pressure, bar')
+xticks(xs)
 xticklabels(Plabels)
 
 figure
 plot(xs,ig_Ps(1,:),'-k','DisplayName','t = 0 s','LineWidth',2)
 hold on
-plot(xs,ig_Ps(find(logtab.t == 5),:),'--k','DisplayName','t = 5 s','LineWidth',2)
-plot(xs,ig_Ps(find(logtab.t == 10),:),'-.k','DisplayName','t = 10 s','LineWidth',2)
-plot(xs,ig_Ps(end,:),':k','DisplayName','t = 15 s','LineWidth',2)
+plot(xs,interp1(logtab.t,ig_Ps,3.33333),'--k','DisplayName','t = 3.33 s','LineWidth',2)
+plot(xs,interp1(logtab.t,ig_Ps,6.66667),'-.k','DisplayName','t = 6.66 s','LineWidth',2)
+plot(xs,ig_Ps(end,:),':k','DisplayName','t = 10 s','LineWidth',2)
 title('Pressure Drop Through Igniter Methane Feed')
 xlabel('Component')
 ylabel('Pressure, bar')
@@ -382,9 +381,15 @@ hold off
 
 
 %% Print key outputs
-% fprintf('Injector Outlet Pressure: %0.4f bar\n',logtab.injector_P2(end)/1e5)
-% fprintf('                    mdot: %0.4f kg/s\n',logtab.mdot(end))
-% fprintf('Chamber Pressure at mdot: %0.4f bar\n',mdot2Pc(logtab.mdot(end))/1e5)
+fprintf('Main Injector mdot: %0.4f kg/s\n',logtab.inj_mdot(1))
+fprintf('Main Injector Target mdot: %0.4f kg/s\n',inj_mdot_targ)
+fprintf('Main Combustion Chamber Pressure at mdot: %0.2f bar\n',mdot2Pc(logtab.inj_mdot(1))/1e5)
+fprintf('Main Injector Outlet Pressure: %0.2f bar\n',logtab.inj_P2(1)/1e5)
+fprintf('Main Combustion Chamber Target Pressure: %0.2f bar\n\n',inj_Pc_targ/1e5)
+fprintf('Igniter mdot: %0.6f kg/s\n',logtab.ig_mdot(1))
+fprintf('Igniter Target mdot: %0.6f kg/s\n',ig_mdot_targ)
+fprintf('Igniter Outlet Pressure: %0.2f bar\n',logtab.ig_P2(1)/1e5)
+fprintf('Igniter Chamber Target Pressure: %0.2f bar\n',ig_Pc_targ/1e5)
 disp(tank_sys)
 disp(inj_sys)
 disp(ig_sys)
