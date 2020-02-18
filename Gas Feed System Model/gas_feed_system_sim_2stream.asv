@@ -91,14 +91,16 @@ rhotank = PREoS(medium,"rho",Ptank,Ttank);% kg/m^3
 
 % Assemble logging table from part names, to logtab P&T at outlet of each
 % part. t, mdot, and tank params are explicitly included for storage
-varnames = {'t','mdot','inj_mdot','ig_mdot','Ptank','Ttank','HVF_P2','HVF_T2'};
+varnames = {'t','sys_mdot','inj_mdot','ig_mdot','Ptank','Ttank','HVF_P2','HVF_T2'};
+inj_itr = @(i) 2*i+7;
+ig_itr = @(i) 2*i+7+2*n_inj_pt;
 for i=1:n_inj_pt
-    varnames{2*i+7} = sprintf('%s_P2',inj_sys.PartName(i));
-    varnames{2*i+8} = sprintf('%s_T2',inj_sys.PartName(i));
+    varnames{inj_itr(i)} = sprintf('%s_P2',inj_sys.PartName(i));
+    varnames{inj_itr(i)+1} = sprintf('%s_T2',inj_sys.PartName(i));
 end
 for i=1:n_ig_pt
-    varnames{2*i+7+2*n_inj_pt} = sprintf('%s_P2',ig_sys.PartName(i));
-    varnames{2*i+8+2*n_inj_pt} = sprintf('%s_T2',ig_sys.PartName(i));
+    varnames{ig_itr(i)} = sprintf('%s_P2',ig_sys.PartName(i));
+    varnames{ig_itr(i)+1} = sprintf('%s_T2',ig_sys.PartName(i));
 end
 vartypes = repelem({'double'},length(varnames));
 logtab = table('Size',[n_steps length(varnames)],...
@@ -113,45 +115,48 @@ wbar = waitbar(0,'Running Simulation');
 %% Iterate on tank conditions until t_stop
 for itr=1:n_steps
 
-% Find injector mdot for given tank outlet conditions
+% injector settings
 inj_mdot_step = 1e-2;% kg/s
-inj_mdot_coef = 0.5;% Step size refinement coefficient
+inj_step_coef = 0.5;% Step size refinement coefficient
 inj_mdot_tol = 1e-6;% convergence criterion
 inj_mdot_test = inj_mdot_step; % Initialize mdot_test
 
-% Find igniter mdot for given tank outlet conditions
+% igniter settings
 ig_mdot_step = 1e-4;% kg/s
-ig_mdot_coef = 0.5;% Step size refinement coefficient
+ig_step_coef = 0.5;% Step size refinement coefficient
 ig_mdot_tol = 1e-8;% convergence criterion
 ig_mdot_test = ig_mdot_step; % Initialize mdot_test
 
 % Find system mdot by interatively increasing until choked
 while true
-% Propagate P & T thru tank valve
-% tank_mdot_choked = 1;% Reset mdot_choked > mdot_test to avoid choke boolean if not choked
-tank_mdot_test = inj_mdot_test+ig_mdot_test;
-tank_sys.P1 = Ptank;
-tank_sys.T1 = Ttank;
-itm_out = valve(medium,tank_mdot_test,tank_sys.P1,tank_sys.T1,tank_sys.Cv);
-if length(itm_out) > 1 % If unchoked, store P2, T2
-    HVF_P2 = itm_out(1);
-    HVF_T2 = itm_out(2);
-else
-    % If choked, go back 1 step & refine step size to "sneak up" on choked
-    % condition. If not choked, continue evaluation to subsystems.
-%     tank_mdot_choked = itm_out;
-    tank_sys.Choked = "Y";
-    inj_mdot_test = inj_mdot_test - inj_mdot_step;
-    inj_mdot_step = inj_mdot_step*0.5;
-    ig_mdot_test = ig_mdot_test - ig_mdot_step;
-    ig_mdot_step = ig_mdot_step*0.5;
-    continue
-end
-    
-    
-%% If tank valve not choked, propagate P & T thru injector & igniter streams
+    % Propagate P & T thru tank valve
+    tank_mdot_test = inj_mdot_test+ig_mdot_test;
+    tank_sys.P1 = Ptank;
+    tank_sys.T1 = Ttank;
+    itm_out = valve(medium,tank_mdot_test,tank_sys.P1,tank_sys.T1,tank_sys.Cv);
+    if length(itm_out) > 1 % If unchoked, store P2, T2
+        tank_sys.Choked = "N";
+        tank_sys.P2 = itm_out(1);
+        tank_sys.T2 = itm_out(2);
+        inj_sys.P1(1) = tank_sys.P2;
+        inj_sys.T1(1) = tank_sys.T2;
+        ig_sys.P1(1) = tank_sys.P2;
+        ig_sys.T1(1) = tank_sys.T2;
+    else % if choked, log choke location, step back, and refine step size
+        tank_sys.Choked = "Y";
+        inj_sys.Choked = repelem("N",n_inj_pt)';
+        inj_mdot_test = inj_mdot_test - inj_mdot_step;
+        inj_mdot_step = inj_mdot_step*inj_step_coef;
+        ig_sys.Choked = repelem("N",n_ig_pt)';
+        ig_mdot_test = ig_mdot_test - ig_mdot_step;
+        ig_mdot_step = ig_mdot_step*ig_step_coef;
+        continue
+    end
+
+
+    %% If tank valve is not choked, propagate P & T thru injector & igniter streams
     % MAIN INJECTOR
-    inj_mdot_choked = 1;% Reset mdot_choked > mdot_test to avoid choke boolean if not choked
+    inj_choked = false;
     for itm=1:n_inj_pt
         % Get P1, T1 from nearest upstream element
         if itm~=1
@@ -173,17 +178,17 @@ end
         if length(itm_out) > 1
             inj_sys.P2(itm) = itm_out(1);
             inj_sys.T2(itm) = itm_out(2);
-        else % if choked, get output mdot & log choke location
-            inj_mdot_choked = itm_out;
+        else % if choked, log choke location
             inj_sys.Choked = repelem("N",n_inj_pt)';
             inj_sys.Choked(itm) = "Y";
-            break
+            inj_choked = true;
+            break % break out of subsystem for loop
         end
     end
-    
-    
+
+
     % IGNITER
-    ig_mdot_choked = 1;% Reset mdot_choked > mdot_test to avoid choke boolean if not choked
+    ig_choked = false;
     for itm=1:n_ig_pt
         % Get P1, T1 from nearest upstream element
         if itm~=1
@@ -205,57 +210,67 @@ end
         if length(itm_out) > 1
             ig_sys.P2(itm) = itm_out(1);
             ig_sys.T2(itm) = itm_out(2);
-        else % if choked, get output mdot & log choke location
-            ig_mdot_choked = itm_out;
+        else % if choked, log choke location
             ig_sys.Choked = repelem("N",n_ig_pt)';
             ig_sys.Choked(itm) = "Y";
-            break
+            ig_choked = true;
+            break % break out of subsystem for loop
         end
     end
 
     %% Check convergence
     if inj_mdot_step <= inj_mdot_tol && ig_mdot_step <= ig_mdot_tol
-        sys_mdot = tank_mdot_test; % Declare subsystem mdot as converged
         break
     end
     
-    if inj_mdot_choked < inj_mdot_test
-        % If choked, go back 1 step & refine step size to "sneak up" on choked
-        % condition. If not choked, continue with same step size.
-        inj_mdot_test = inj_mdot_test - inj_mdot_step;
-        inj_mdot_step = inj_mdot_step*0.5;
-    else
+    %% Update Step Sizes depending on choke condition
+    if inj_choked % If choked, step back & refine step size
+        inj_mdot_test = max([inj_mdot_test - inj_mdot_step 0]);% Prevent negative mdot
+        inj_mdot_step = inj_mdot_step*inj_step_coef;
+    else % else step forward
         inj_mdot_test = inj_mdot_test + inj_mdot_step;
-        ig_mdot_test = ig_mdot_test - ig_mdot_step;
-        ig_mdot_step = ig_mdot_step*0.5;
+    end
+    
+    if ig_choked % If choked, step back & refine step size
+        ig_mdot_test = max([ig_mdot_test - ig_mdot_step 0]);% Prevent negative mdot
+        ig_mdot_step = ig_mdot_step*ig_step_coef;
+    else % else step forward
+        ig_mdot_test = ig_mdot_test + ig_mdot_step;
+    end
 
 end
+
+
+% logtab values from iteration
+if itr ~= 1
+    logtab.t(itr) = logtab.t(itr-1)+t_step;
+end
+logtab.sys_mdot(itr) = tank_mdot_test; % Declare mdot as converged
+logtab.inj_mdot(itr) = inj_mdot_test;
+logtab.ig_mdot(itr) = ig_mdot_test;
+logtab.Ptank(itr) = Ptank;
+logtab.Ttank(itr) = Ttank;
+logtab.HVF_P2(itr) = tank_sys.P2;
+logtab.HVF_T2(itr) = tank_sys.T2;
+for i=1:n_inj_pt
+    logtab(itr,varnames(inj_itr(i))) = inj_sys(i,'P2');
+    logtab(itr,varnames(inj_itr(i)+1)) = inj_sys(i,'T2');
+end
+for i=1:n_ig_pt
+    logtab(itr,varnames(ig_itr(i))) = ig_sys(i,'P2');
+    logtab(itr,varnames(ig_itr(i)+1)) = ig_sys(i,'T2');
 end
 
 
-% % logtab values from iteration
-% if itr ~= 1
-%     logtab.t(itr) = logtab.t(itr-1)+t_step;
-% end
-% logtab.mdot(itr) = mdot_sys;
-% logtab.Ptank(itr) = Ptank;
-% logtab.Ttank(itr) = Ttank;
-% for i=1:n_parts
-%     logtab(itr,varnames(2*i+3)) = systab(i,'P2');
-%     logtab(itr,varnames(2*i+4)) = systab(i,'T2');
-% end
-% 
-% 
-% % New Tank Properties
-% mtank = rhotank*V_tank - mdot_sys*t_step;
-% rhotank = mtank/V_tank;
-% % Only new tank density is known, so use isentropic expansion w/ EoS to
-% % find new temp, then use new temp & known density to find P
-% Pfn = @(T) PREoS(medium,"P",T,rhotank) - Ptank*(T/Ttank)^(medium.gam/(medium.gam-1));
-% [Tll, Tul] = bracket_sign_change(Pfn,Ttank*0.9,Ttank);
-% [Tll, Tul] = bisection(Pfn,Tll,Tul);
-% Ttank = mean([Tll,Tul]);
-% Ptank = PREoS(medium,"P",Ttank,rhotank);
+% New Tank Properties
+rhotank = (rhotank*V_tank - logtab.sys_mdot(itr)*t_step)/V_tank;
+% Only new tank density is known, so use isentropic expansion w/ EoS to
+% find new temp, then use new temp & known density to find P
+Pfn = @(T) PREoS(medium,"P",T,rhotank) - Ptank*(T/Ttank)^(medium.gam/(medium.gam-1));
+[Tll, Tul] = bracket_sign_change(Pfn,Ttank*0.9,Ttank);
+[Tll, Tul] = bisection(Pfn,Tll,Tul);
+Ttank = mean([Tll,Tul]);
+Ptank = PREoS(medium,"P",Ttank,rhotank);
 
 % update waitbar
     waitbar(itr/n_steps,wbar)
@@ -263,76 +278,99 @@ end
 close(wbar)
 
 
-%% Plot Simulation Output as mdot, in & out P & T
+%% Plot tank conditions, mass flow rates
 figure
-subplot(2,2,1)
-sgtitle('Tank and Orifice Fluid Conditions During Blowdown')
+subplot(2,4,1)
+sgtitle('Tank Fluid Conditions & Subsystem Mass Flow Rates')
 plot(logtab.t,logtab.Ptank/1e5,'k','LineWidth',2)
 grid on
 xlabel('Time, s')
 ylabel('Tank Pressure, bar')
 
-subplot(2,2,3)
+subplot(2,4,5)
 plot(logtab.t,logtab.Ttank,'k','LineWidth',2)
 grid on
 xlabel('Time, s')
 ylabel('Tank Temperature, K')
 
-subplot(2,2,[2,4])% Show mdot large
-plot(logtab.t,logtab.mdot,'k','LineWidth',2)
-grid on
-ylim([logtab.mdot(end)*0.99,logtab.mdot(1)*1.01])
-% hold on
-% plot(xlim(gca),[mdot_target,mdot_target],':k')
-% stoptime = interp1(logtab.mdot,logtab.t,mdot_target);
-% plot([stoptime,stoptime],ylim(gca),':k')
-% hold off
-xlabel('Time, s')
-ylabel('Mass Flow Rate, kg/s')
+subplot(2,4,[2,6])% Show mdots large
+plot(logtab.t,logtab.sys_mdot,'k','LineWidth',2)
+ylim([0,logtab.sys_mdot(1)*1.1])
+ylabel('Total Mass Flow Rate, kg/s')
 
-% subplot(2,3,2)
-% plot(logtab.t,logtab.injector_P2/1e5,'k','LineWidth',2)
-% grid on
-% % hold on
-% % stoptime = interp1(logtab.RGMF_P2,logtab.t,p_choke);
-% % plot(xlim(gca),[p_choke/1e5,p_choke/1e5],':k')
-% % plot([stoptime,stoptime],ylim(gca),':k')
-% % hold off
-% xlabel('Time, s')
-% ylabel('Injector Downstream Pressure, bar')
+subplot(2,4,[3,7])% Show mdots large
+plot(logtab.t,logtab.inj_mdot,'k','LineWidth',2)
+ylim([0,logtab.sys_mdot(1)*1.1])
+ylabel('Main Injector Mass Flow Rate, kg/s')
 
-% subplot(2,3,5)
-% plot(logtab.t,logtab.injector_T2,'k','LineWidth',2)
-% grid on
-% xlabel('Time, s')
-% ylabel('Injector Downstream Temperature, K')
+subplot(2,4,[4,8])% Show mdots large
+plot(logtab.t,logtab.ig_mdot,'k','LineWidth',2)
+ylim([0,logtab.sys_mdot(1)*1.1])
+ylabel('Igniter Mass Flow Rate, kg/s')
 
-%% Plot Simulation Output as station conditions
-P_idxs = [3,5:2:length(varnames)];
-station_Ps = logtab{:,P_idxs}/1e5;
-T_idxs = P_idxs+1;
-station_Ts = logtab(:,T_idxs);
-xs = 1:length(P_idxs);
+
+%% Plot Injector station conditions
+inj_P_idx = [5,7,inj_itr(1:n_inj_pt)];
+inj_Ps = logtab{:,inj_P_idx}/1e5;
+T_idxs = inj_P_idx+1;
+inj_Ts = logtab(:,T_idxs);
+xs = 1:length(inj_P_idx);
 ys = logtab.t;
 [X, Y] = meshgrid(xs,ys);
-labels = logtab.Properties.VariableNames;
-Plabels = ["Tank",systab.PartName{:}];
+% labels = logtab.Properties.VariableNames;
+Plabels = ["Tank","HVF",inj_sys.PartName{:}];
 
 figure
-mesh(X,Y,station_Ps)
+mesh(X,Y,inj_Ps)
 view(45,15)
-title('Pressure Drop Through Main Methane Feed System')
+title('Pressure Drop Through Main Injector Methane Feed')
 xlabel('Component')
 ylabel('Time, s')
 zlabel('Pressure, bar')
 xticklabels(Plabels)
 
 figure
-plot(xs,station_Ps(1,:),'-k','DisplayName','t = 0 s','LineWidth',2)
+plot(xs,inj_Ps(1,:),'-k','DisplayName','t = 0 s','LineWidth',2)
 hold on
-plot(xs,station_Ps(find(logtab.t == 5),:),'--k','DisplayName','t = 5 s','LineWidth',2)
-plot(xs,station_Ps(find(logtab.t == 10),:),'-.k','DisplayName','t = 10 s','LineWidth',2)
-plot(xs,station_Ps(end,:),':k','DisplayName','t = 15 s','LineWidth',2)
+plot(xs,inj_Ps(find(logtab.t == 5),:),'--k','DisplayName','t = 5 s','LineWidth',2)
+plot(xs,inj_Ps(find(logtab.t == 10),:),'-.k','DisplayName','t = 10 s','LineWidth',2)
+plot(xs,inj_Ps(end,:),':k','DisplayName','t = 15 s','LineWidth',2)
+title('Pressure Drop Through Main Injector Methane Feed')
+xlabel('Component')
+ylabel('Pressure, bar')
+legend('Location','northeast')
+% xticks(xs)
+xticklabels(Plabels)
+grid on
+hold off
+
+
+%% Plot Igniter station conditions
+ig_P_idx = [5,7,ig_itr(1:n_ig_pt)];
+ig_Ps = logtab{:,ig_P_idx}/1e5;
+T_idxs = ig_P_idx+1;
+ig_Ts = logtab(:,T_idxs);
+xs = 1:length(ig_P_idx);
+ys = logtab.t;
+[X, Y] = meshgrid(xs,ys);
+% labels = logtab.Properties.VariableNames;
+Plabels = ["Tank","HVF",ig_sys.PartName{:}];
+
+figure
+mesh(X,Y,ig_Ps)
+view(45,15)
+title('Pressure Drop Through Igniter Methane Feed')
+xlabel('Component')
+ylabel('Time, s')
+zlabel('Pressure, bar')
+xticklabels(Plabels)
+
+figure
+plot(xs,ig_Ps(1,:),'-k','DisplayName','t = 0 s','LineWidth',2)
+hold on
+plot(xs,ig_Ps(find(logtab.t == 5),:),'--k','DisplayName','t = 5 s','LineWidth',2)
+plot(xs,ig_Ps(find(logtab.t == 10),:),'-.k','DisplayName','t = 10 s','LineWidth',2)
+plot(xs,ig_Ps(end,:),':k','DisplayName','t = 15 s','LineWidth',2)
 title('Pressure Drop Through Main Methane Feed System')
 xlabel('Component')
 ylabel('Pressure, bar')
@@ -342,8 +380,9 @@ xticklabels(Plabels)
 grid on
 hold off
 
+
 %% Print key outputs
-fprintf('Injector Outlet Pressure: %0.4f bar\n',logtab.injector_P2(end)/1e5)
-fprintf('                    mdot: %0.4f kg/s\n',logtab.mdot(end))
-fprintf('Chamber Pressure at mdot: %0.4f bar\n',mdot2Pc(logtab.mdot(end))/1e5)
-disp(systab)
+% fprintf('Injector Outlet Pressure: %0.4f bar\n',logtab.injector_P2(end)/1e5)
+% fprintf('                    mdot: %0.4f kg/s\n',logtab.mdot(end))
+% fprintf('Chamber Pressure at mdot: %0.4f bar\n',mdot2Pc(logtab.mdot(end))/1e5)
+% disp(systab)
