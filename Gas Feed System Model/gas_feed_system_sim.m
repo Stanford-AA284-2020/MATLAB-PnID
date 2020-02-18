@@ -20,47 +20,47 @@ Pc2mdot = @(Pc) interp1(PcTrends.Pc,PcTrends.mdotF,Pc);
 Pc_target = 10e5;% Pa, 10 bar
 mdot_target = Pc2mdot(Pc_target);% kg/s
 
-% RGMF_P2_reg = 95e5;% Pa
-% RGMF_droop = 20349856;% Pa/(kg/s), Regulator outlet pressure droop from Tescom 26-2064D24A270 (catalog flow tables)
-% D_orif = 2.65;% mm, Flow Control Orifice Size
-% A_orif = pi*(D_orif/(2*1000))^2;% m^2
-% Cd_orif = 0.61;% Sharp-edged plate orifice in high-Re limit
-% % A_injF = orifice_size(Methane,Pc2mdot(Pc_target),0.4,0.61,41.8e5,224);% m^2
-% A_injF = 0.97e-5;% m^2
-% Cd_injF = 0.61;% Sharp-edged plate orifice in high-Re limit
-% 
-% n_parts = 7;
-% systab = table('Size',[n_parts 12],...
-%     'VariableTypes',[repelem({'string'},2),repelem({'double'},9),{'string'}],...
-%     'VariableNames',{'PartName','Type','Cv','RegP2','RegDroop','Cd','A','P1','P2','T1','T2','Choked'});
-% systab.Choked = repelem("N",n_parts)';
-% systab{1,1:2}=["HVMF","valve"];systab.Cv(1)=0.69;% Sherwood GV cylinder valve
-% systab{2,1:2}=["RGMF","regulator"];systab.Cv(2)=0.3;systab.RegP2(2)=RGMF_P2_reg;systab.RegDroop(2)=RGMF_droop;% Tescom 26-2095TA470AN
-% systab{3,1:2}=["BVMF1","valve"];systab.Cv(3)=6.0;systab.A(3)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
-% systab{4,1:2}=["ORMF","orifice"];systab.Cd(4)=Cd_orif;systab.A(4)=A_orif;% Flow Control Orifice
-% systab{5,1:2}=["CKMF","valve"];systab.Cv(5)=1.9;% CheckAll U3CSSTF0.500SS check valve
-% systab{6,1:2}=["BVMF2","valve"];systab.Cv(6)=6.0;systab.A(6)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
-% systab{7,1:2}=["injector","orifice"];systab.Cd(7)=Cd_injF;systab.A(7)=A_injF;% Main Injector Methane Orifices
+RGMF_P2_reg = 95e5;% Pa
+RGMF_droop = 20349856;% Pa/(kg/s), Regulator outlet pressure droop from Tescom 26-2064D24A270 (catalog flow tables)
+D_orif = 2.65;% mm, Flow Control Orifice Size
+A_orif = pi*(D_orif/(2*1000))^2;% m^2
+Cd_orif = 0.61;% Sharp-edged plate orifice in high-Re limit
+% A_injF = orifice_size(Methane,Pc2mdot(Pc_target),0.4,0.61,41.8e5,224);% m^2
+A_injF = 0.97e-5;% m^2
+Cd_injF = 0.61;% Sharp-edged plate orifice in high-Re limit
 
-
-% IGNITER METHANE
-RGIF_P2_reg = 95e5;% Pa
-RGIF_droop = 111924205;% Pa/(kg/s), Regulator outlet pressure droop from Victor SR4J
-meter_Cv = 0.16;% Metering Valve Cv<=0.16
-Cd_igF = 0.61;% Sharp-edged plate orifice in high-Re limit
-A_igF = 7.59E-07;% m^2, From igniter spreadsheet
 n_parts = 7;
 systab = table('Size',[n_parts 12],...
     'VariableTypes',[repelem({'string'},2),repelem({'double'},9),{'string'}],...
     'VariableNames',{'PartName','Type','Cv','RegP2','RegDroop','Cd','A','P1','P2','T1','T2','Choked'});
 systab.Choked = repelem("N",n_parts)';
 systab{1,1:2}=["HVMF","valve"];systab.Cv(1)=0.69;% Sherwood GV cylinder valve
-systab{2,1:2}=["RGIF","regulator"];systab.Cv(2)=0.1147;systab.RegP2(2)=RGIF_P2_reg;systab.RegDroop(2)=RGIF_droop;% Victor SR4J
-systab{3,1:2}=["BVIF","valve"];systab.Cv(3)=6.0;systab.A(3)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
-systab{4,1:2}=["NVIF","valve"];systab.Cv(4)=meter_Cv;% Swagelok SS-4L2-MH Flow Metering Valve, Vernier Handle
-systab{5,1:2}=["CKIF","valve"];systab.Cv(5)=1.9;% CheckAll U3CSSTF.500SS check valve
-systab{6,1:2}=["SVIF","valve"];systab.Cv(6)=0.04;systab.A(6)=pi*(3/64/2*0.0254)^2;% Parker Skinner 71216SN2FU00N0C111C2 Solenoid Valve
-systab{7,1:2}=["igniter","orifice"];systab.Cd(7)=Cd_igF;systab.A(7)=A_igF;% Igniter Methane Orifice
+systab{2,1:2}=["RGMF","regulator"];systab.Cv(2)=0.3;systab.RegP2(2)=RGMF_P2_reg;systab.RegDroop(2)=RGMF_droop;% Tescom 26-2095TA470AN
+systab{3,1:2}=["BVMF1","valve"];systab.Cv(3)=6.0;systab.A(3)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
+systab{4,1:2}=["ORMF","orifice"];systab.Cd(4)=Cd_orif;systab.A(4)=A_orif;% Flow Control Orifice
+systab{5,1:2}=["CKMF","valve"];systab.Cv(5)=1.9;% CheckAll U3CSSTF0.500SS check valve
+systab{6,1:2}=["BVMF2","valve"];systab.Cv(6)=6.0;systab.A(6)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
+systab{7,1:2}=["injector","orifice"];systab.Cd(7)=Cd_injF;systab.A(7)=A_injF;% Main Injector Methane Orifices
+
+
+% IGNITER METHANE
+% RGIF_P2_reg = 95e5;% Pa
+% RGIF_droop = 111924205;% Pa/(kg/s), Regulator outlet pressure droop from Victor SR4J
+% meter_Cv = 0.16;% Metering Valve Cv<=0.16
+% Cd_igF = 0.61;% Sharp-edged plate orifice in high-Re limit
+% A_igF = 7.59E-07;% m^2, From igniter spreadsheet
+% n_parts = 7;
+% systab = table('Size',[n_parts 12],...
+%     'VariableTypes',[repelem({'string'},2),repelem({'double'},9),{'string'}],...
+%     'VariableNames',{'PartName','Type','Cv','RegP2','RegDroop','Cd','A','P1','P2','T1','T2','Choked'});
+% systab.Choked = repelem("N",n_parts)';
+% systab{1,1:2}=["HVMF","valve"];systab.Cv(1)=0.69;% Sherwood GV cylinder valve
+% systab{2,1:2}=["RGIF","regulator"];systab.Cv(2)=0.1147;systab.RegP2(2)=RGIF_P2_reg;systab.RegDroop(2)=RGIF_droop;% Victor SR4J
+% systab{3,1:2}=["BVIF","valve"];systab.Cv(3)=6.0;systab.A(3)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
+% systab{4,1:2}=["NVIF","valve"];systab.Cv(4)=meter_Cv;% Swagelok SS-4L2-MH Flow Metering Valve, Vernier Handle
+% systab{5,1:2}=["CKIF","valve"];systab.Cv(5)=1.9;% CheckAll U3CSSTF.500SS check valve
+% systab{6,1:2}=["SVIF","valve"];systab.Cv(6)=0.04;systab.A(6)=pi*(3/64/2*0.0254)^2;% Parker Skinner 71216SN2FU00N0C111C2 Solenoid Valve
+% systab{7,1:2}=["igniter","orifice"];systab.Cd(7)=Cd_igF;systab.A(7)=A_igF;% Igniter Methane Orifice
 
 
 %% Simulation Setup
@@ -108,59 +108,62 @@ for itr=1:n_steps
 % Find mdot for given tank conditions
 mdot_step = 1e-2;% kg/s
 mdot_coef = 0.5;% Step size refinement coefficient
-mdot_term = 1e-6;% convergence criterion
+mdot_tol = 1e-6;% convergence criterion
 mdot_test = mdot_step; % Initialize mdot_test
-while true
-    % Propagate P & T through system for mdot_test
-    mdot_out = 1;% Reset mdot_out > mdot_test to avoid choke boolean later
-    for itm=1:n_parts
-        % Get P1, T1 from nearest upstream element
-        if itm==1
-            systab.P1(itm) = Ptank;
-            systab.T1(itm) = Ttank;
-        else
-            systab.P1(itm) = systab.P2(itm-1);
-            systab.T1(itm) = systab.T2(itm-1);
-        end
-
-        % Calculate P2, T2 from P1, T1, and check for choking
-        % All flow device codes assume isentropic temp relations
-        if systab.Type(itm) == "valve"
-            itm_out = valve(medium,mdot_test,systab.P1(itm),systab.T1(itm),systab.Cv(itm));
-        elseif systab.Type(itm) == "regulator"
-            itm_out = regulator(medium,mdot_test,systab.P1(itm),systab.T1(itm),systab.Cv(itm),systab.RegP2(itm),systab.RegDroop(itm));
-        elseif systab.Type(itm) == "orifice"
-            itm_out = orifice(medium,mdot_test,systab.P1(itm),systab.T1(itm),systab.Cd(itm),systab.A(itm)); 
-        end
-
-        % If unchoked, add P2, T2 to system table
-        if length(itm_out) > 1
-            systab.P2(itm) = itm_out(1);
-            systab.T2(itm) = itm_out(2);
-        else % if choked, get output mdot & log choke location
-            mdot_out = itm_out;
-            systab.Choked = repelem("N",n_parts)';
-            systab.Choked(itm) = "Y";
-            break
-        end
-    end
-
-    % Check convergence
-    if mdot_step <= mdot_term
-        mdot_sys = mdot_test; % Declare system mdot as converged
-        break
-    end
-
-    % If choked, go back 1 step & refine step size to "sneak up" on choked
-    % condition. If not choked, continue with same step size.
-    if mdot_out < mdot_test
-        mdot_test = mdot_test - mdot_step;
-        mdot_step = mdot_step*0.5;
-    else
-        mdot_test = mdot_test + mdot_step;
-    end
-
-end
+systab.P1(1) = Ptank;
+systab.T1(1) = Ttank;
+[mdot_sys, systab] = system_mdot(systab, medium, mdot_test, mdot_step, mdot_coef, mdot_tol);
+% while true
+%     % Propagate P & T through system for mdot_test
+%     mdot_out = 1;% Reset mdot_out > mdot_test to avoid choke boolean later
+%     for itm=1:n_parts
+%         % Get P1, T1 from nearest upstream element
+%         if itm==1
+%             systab.P1(itm) = Ptank;
+%             systab.T1(itm) = Ttank;
+%         else
+%             systab.P1(itm) = systab.P2(itm-1);
+%             systab.T1(itm) = systab.T2(itm-1);
+%         end
+% 
+%         % Calculate P2, T2 from P1, T1, and check for choking
+%         % All flow device codes assume isentropic temp relations
+%         if systab.Type(itm) == "valve"
+%             itm_out = valve(medium,mdot_test,systab.P1(itm),systab.T1(itm),systab.Cv(itm));
+%         elseif systab.Type(itm) == "regulator"
+%             itm_out = regulator(medium,mdot_test,systab.P1(itm),systab.T1(itm),systab.Cv(itm),systab.RegP2(itm),systab.RegDroop(itm));
+%         elseif systab.Type(itm) == "orifice"
+%             itm_out = orifice(medium,mdot_test,systab.P1(itm),systab.T1(itm),systab.Cd(itm),systab.A(itm)); 
+%         end
+% 
+%         % If unchoked, add P2, T2 to system table
+%         if length(itm_out) > 1
+%             systab.P2(itm) = itm_out(1);
+%             systab.T2(itm) = itm_out(2);
+%         else % if choked, get output mdot & log choke location
+%             mdot_out = itm_out;
+%             systab.Choked = repelem("N",n_parts)';
+%             systab.Choked(itm) = "Y";
+%             break
+%         end
+%     end
+% 
+%     % Check convergence
+%     if mdot_step <= mdot_tol
+%         mdot_sys = mdot_test; % Declare system mdot as converged
+%         break
+%     end
+% 
+%     % If choked, go back 1 step & refine step size to "sneak up" on choked
+%     % condition. If not choked, continue with same step size.
+%     if mdot_out < mdot_test
+%         mdot_test = mdot_test - mdot_step;
+%         mdot_step = mdot_step*0.5;
+%     else
+%         mdot_test = mdot_test + mdot_step;
+%     end
+% 
+% end
 
 
 % logtab values from iteration
