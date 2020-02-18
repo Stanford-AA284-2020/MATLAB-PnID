@@ -36,7 +36,7 @@ function output = regulator(medium, mdot, P1, T1, Cv, RegP2, RegDroop)
         if q > q_choke %|| P2 <= chokeP2 % If regulator is choked, output choked mass flow
             output = q_choke*SLPM2kgps;% kg/s
             return
-        elseif P1 <= P2 % If upstream pressure is too low, regulator will lock up
+        elseif P1 <= RegP2 % If upstream pressure is too low, regulator will lock up
             output = 0;% kg/s
             return
         end

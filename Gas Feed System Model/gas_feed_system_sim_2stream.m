@@ -145,10 +145,10 @@ while true
     else % if choked, log choke location, step back, and refine step size
         tank_sys.Choked = "Y";
         inj_sys.Choked = repelem("N",n_inj_pt)';
-        inj_mdot_test = inj_mdot_test - inj_mdot_step;
+        inj_mdot_test = max([inj_mdot_test - inj_mdot_step 0]);
         inj_mdot_step = inj_mdot_step*inj_step_coef;
         ig_sys.Choked = repelem("N",n_ig_pt)';
-        ig_mdot_test = ig_mdot_test - ig_mdot_step;
+        ig_mdot_test = max([ig_mdot_test - ig_mdot_step 0]);
         ig_mdot_step = ig_mdot_step*ig_step_coef;
         continue
     end
