@@ -10,57 +10,92 @@ PcTrends = readtable('PcTrends1inthroat.csv');
 PcTrends = [repelem({0},length(PcTrends{1,:}));PcTrends];
 % plot(PcTrends.mdotF,PcTrends.Pc)
 % Linear Fit to get Pc from mdot
-mdot2Pc = @(mdot) interp1(PcTrends.mdotF,PcTrends.Pc,mdot);
-Pc2mdot = @(Pc) interp1(PcTrends.Pc,PcTrends.mdotF,Pc);
+mdotO2Pc = @(mdot) interp1(PcTrends.mdotO,PcTrends.Pc,mdot);
+Pc2mdotF = @(Pc) interp1(PcTrends.Pc,PcTrends.mdotF,Pc);
 
 
 %% Build system as table of parts, parameters, P & T values
 
-% MAIN INJECTOR METHANE
-Pc_target = 10e5;% Pa, 10 bar
-mdot_target = Pc2mdot(Pc_target);% kg/s
-
-RGMF_P2_reg = 95e5;% Pa
-RGMF_droop = 20349856;% Pa/(kg/s), Regulator outlet pressure droop from Tescom 26-2064D24A270 (catalog flow tables)
-D_orif = 2.65;% mm, Flow Control Orifice Size
-A_orif = pi*(D_orif/(2*1000))^2;% m^2
-Cd_orif = 0.61;% Sharp-edged plate orifice in high-Re limit
-% A_injF = orifice_size(Methane,Pc2mdot(Pc_target),0.4,0.61,41.8e5,224);% m^2
-A_injF = 0.97e-5;% m^2
-Cd_injF = 0.61;% Sharp-edged plate orifice in high-Re limit
-
-n_parts = 7;
-systab = table('Size',[n_parts 12],...
+% Blank System Table
+make_systab = @(n_parts) table('Size',[n_parts 12],...
     'VariableTypes',[repelem({'string'},2),repelem({'double'},9),{'string'}],...
     'VariableNames',{'PartName','Type','Cv','RegP2','RegDroop','Cd','A','P1','P2','T1','T2','Choked'});
-systab.Choked = repelem("N",n_parts)';
-systab{1,1:2}=["HVMF","valve"];systab.Cv(1)=0.69;% Sherwood GV cylinder valve
-systab{2,1:2}=["RGMF","regulator"];systab.Cv(2)=0.3;systab.RegP2(2)=RGMF_P2_reg;systab.RegDroop(2)=RGMF_droop;% Tescom 26-2095TA470AN
-systab{3,1:2}=["BVMF1","valve"];systab.Cv(3)=6.0;systab.A(3)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
-systab{4,1:2}=["ORMF","orifice"];systab.Cd(4)=Cd_orif;systab.A(4)=A_orif;% Flow Control Orifice
-systab{5,1:2}=["CKMF","valve"];systab.Cv(5)=1.9;% CheckAll U3CSSTF0.500SS check valve
-systab{6,1:2}=["BVMF2","valve"];systab.Cv(6)=6.0;systab.A(6)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
-systab{7,1:2}=["injector","orifice"];systab.Cd(7)=Cd_injF;systab.A(7)=A_injF;% Main Injector Methane Orifices
 
 
-% IGNITER METHANE
-% RGIF_P2_reg = 95e5;% Pa
+% % MAIN INJECTOR METHANE
+% medium = Methane;
+% inj_Pc_targ = 10e5;% Pa, 10 bar
+% inj_mdot_targ = 0.07945;% kg/s
+% 
+% RGMF_P2_reg = 50e5;% Pa
+% RGMF_droop = 20349856;% Pa/(kg/s), Regulator outlet pressure droop from Tescom 26-2064D24A270 (catalog flow tables)
+% orif_D = 3.85;% mm, Flow Control Orifice Size
+% orif_A = pi*(orif_D/(2*1000))^2;% m^2
+% orif_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
+% % A_injF = orifice_size(Methane,Pc2mdot(Pc_target),0.4,0.61,41.8e5,224);% m^2
+% injF_A = 2.75e-5;% m^2
+% injF_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
+% 
+% n_inj_pt = 6;
+% inj_sys = make_systab(n_inj_pt);
+% inj_sys.Choked = repelem("N",n_inj_pt)';
+% inj_sys{1,1:2}=["RGMF","regulator"];inj_sys.Cv(1)=0.3;inj_sys.RegP2(1)=RGMF_P2_reg;inj_sys.RegDroop(1)=RGMF_droop;% Tescom 26-2095TA470AN
+% inj_sys{2,1:2}=["BVMF1","valve"];inj_sys.Cv(2)=6.0;inj_sys.A(2)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
+% inj_sys{3,1:2}=["ORMF","orifice"];inj_sys.Cd(3)=orif_Cd;inj_sys.A(3)=orif_A;% Flow Control Orifice
+% inj_sys{4,1:2}=["CKMF","valve"];inj_sys.Cv(4)=1.9;% CheckAll U3CSSTF0.500SS check valve
+% inj_sys{5,1:2}=["BVMF2","valve"];inj_sys.Cv(5)=6.0;inj_sys.A(5)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
+% inj_sys{6,1:2}=["inj","orifice"];inj_sys.Cd(6)=injF_Cd;inj_sys.A(6)=injF_A;% Main Injector Methane Orifices
+% 
+% 
+% % IGNITER METHANE
+% medium = Methane;
+% ig_Pc_targ = convpres(200,"psi","Pa");% Pa
+% ig_mdot_targ = 0.00110279054076074;% kg/s
+% 
+% RGIF_P2_reg = 32e5;% Pa
 % RGIF_droop = 111924205;% Pa/(kg/s), Regulator outlet pressure droop from Victor SR4J
-% meter_Cv = 0.16;% Metering Valve Cv<=0.16
-% Cd_igF = 0.61;% Sharp-edged plate orifice in high-Re limit
-% A_igF = 7.59E-07;% m^2, From igniter spreadsheet
-% n_parts = 7;
-% systab = table('Size',[n_parts 12],...
-%     'VariableTypes',[repelem({'string'},2),repelem({'double'},9),{'string'}],...
-%     'VariableNames',{'PartName','Type','Cv','RegP2','RegDroop','Cd','A','P1','P2','T1','T2','Choked'});
-% systab.Choked = repelem("N",n_parts)';
-% systab{1,1:2}=["HVMF","valve"];systab.Cv(1)=0.69;% Sherwood GV cylinder valve
-% systab{2,1:2}=["RGIF","regulator"];systab.Cv(2)=0.1147;systab.RegP2(2)=RGIF_P2_reg;systab.RegDroop(2)=RGIF_droop;% Victor SR4J
-% systab{3,1:2}=["BVIF","valve"];systab.Cv(3)=6.0;systab.A(3)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
-% systab{4,1:2}=["NVIF","valve"];systab.Cv(4)=meter_Cv;% Swagelok SS-4L2-MH Flow Metering Valve, Vernier Handle
-% systab{5,1:2}=["CKIF","valve"];systab.Cv(5)=1.9;% CheckAll U3CSSTF.500SS check valve
-% systab{6,1:2}=["SVIF","valve"];systab.Cv(6)=0.04;systab.A(6)=pi*(3/64/2*0.0254)^2;% Parker Skinner 71216SN2FU00N0C111C2 Solenoid Valve
-% systab{7,1:2}=["igniter","orifice"];systab.Cd(7)=Cd_igF;systab.A(7)=A_igF;% Igniter Methane Orifice
+% meter_Cv = 0.0098;% Metering Valve Cv<=0.03
+% igF_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
+% igF_A = 7.59E-07;% m^2, From igniter spreadsheet
+% 
+% n_ig_pt = 6;
+% ig_sys = make_systab(n_ig_pt);
+% ig_sys.Choked = repelem("N",n_ig_pt)';
+% ig_sys{1,1:2}=["RGIF","regulator"];ig_sys.Cv(1)=0.1147;ig_sys.RegP2(1)=RGIF_P2_reg;ig_sys.RegDroop(1)=RGIF_droop;% Victor SR4J
+% ig_sys{2,1:2}=["BVIF","valve"];ig_sys.Cv(2)=6.0;ig_sys.A(2)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
+% ig_sys{3,1:2}=["NVIF","valve"];ig_sys.Cv(3)=meter_Cv;% Swagelok SS-4MG2-MH Flow Metering Valve, Vernier Handle
+% ig_sys{4,1:2}=["CKIF","valve"];ig_sys.Cv(4)=1.9;% CheckAll U3CSSTF.500SS check valve
+% ig_sys{5,1:2}=["SVIF","valve"];ig_sys.Cv(5)=0.04;ig_sys.A(5)=pi*(3/64/2*0.0254)^2;% Parker Skinner 71216SN2FU00N0C111C2 Solenoid Valve
+% ig_sys{6,1:2}=["ig","orifice"];ig_sys.Cd(6)=igF_Cd;ig_sys.A(6)=igF_A;% Igniter Methane Orifice
+
+
+% IGNITER OXYGEN
+medium = Oxygen;
+ig_Pc_targ = convpres(200,"psi","Pa");% Pa
+ig_mdot_targ = 0.00496;% kg/s
+
+RGIF_P2_reg = 46.7e5;% Pa
+RGIF_droop = 111924205;% Pa/(kg/s), Regulator outlet pressure droop from Victor SR4J
+meter_Cv = 0.023;% Metering Valve Cv<=0.03
+igF_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
+igF_A = 2.3E-06;% m^2, From igniter spreadsheet
+
+n_ig_pt = 7;
+ig_sys = make_systab(n_ig_pt);
+ig_sys.Choked = repelem("N",n_ig_pt)';
+ig_sys{1,1:2}=["HVIO","valve"];ig_sys.Cv(1)=0.69;% Sherwood GV Cylinder Valve
+ig_sys{2,1:2}=["RGIO","regulator"];ig_sys.Cv(2)=0.1147;ig_sys.RegP2(2)=RGIF_P2_reg;ig_sys.RegDroop(2)=RGIF_droop;% Victor SR4J
+ig_sys{3,1:2}=["BVIO","valve"];ig_sys.Cv(3)=6.0;ig_sys.A(3)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
+ig_sys{4,1:2}=["NVIO","valve"];ig_sys.Cv(4)=meter_Cv;% Swagelok SS-4MG2-MH Flow Metering Valve, Vernier Handle
+ig_sys{5,1:2}=["CKIO","valve"];ig_sys.Cv(5)=1.9;% CheckAll U3CSSTF.500SS check valve
+ig_sys{6,1:2}=["SVIO","valve"];ig_sys.Cv(6)=0.04;ig_sys.A(6)=pi*(3/64/2*0.0254)^2;% Parker Skinner 71216SN2FU00N0C111C2 Solenoid Valve
+ig_sys{7,1:2}=["ig","orifice"];ig_sys.Cd(7)=igF_Cd;ig_sys.A(7)=igF_A;% Igniter Ox Orifice
+
+
+systab = ig_sys;
+n_parts = n_ig_pt;
+% systab = inj_sys;
+% n_parts = n_inj_pt;
 
 
 %% Simulation Setup
@@ -72,9 +107,8 @@ n_steps = t_stop/t_step+1;
 
 
 % Initial tank parameters
-medium = Methane;
 V_tank = 0.049;% m^3, Standard K cylinder volume is 49 L
-Ptank0 = convpres(2000,"psi","Pa");% Pa
+Ptank0 = convpres(2400,"psi","Pa");% Pa
 Ttank0 = 273.15+25;% K
 rhotank0 = PREoS(medium,"rho",Ptank0,Ttank0);% kg/m^3
 
@@ -215,30 +249,9 @@ subplot(2,2,[2,4])% Show mdot large
 plot(logtab.t,logtab.mdot,'k','LineWidth',2)
 grid on
 ylim([logtab.mdot(end)*0.99,logtab.mdot(1)*1.01])
-% hold on
-% plot(xlim(gca),[mdot_target,mdot_target],':k')
-% stoptime = interp1(logtab.mdot,logtab.t,mdot_target);
-% plot([stoptime,stoptime],ylim(gca),':k')
-% hold off
 xlabel('Time, s')
-ylabel('Mass Flow Rate, kg/s')
+ylabel('Igniter Oxygen Mass Flow Rate, kg/s')
 
-% subplot(2,3,2)
-% plot(logtab.t,logtab.injector_P2/1e5,'k','LineWidth',2)
-% grid on
-% % hold on
-% % stoptime = interp1(logtab.RGMF_P2,logtab.t,p_choke);
-% % plot(xlim(gca),[p_choke/1e5,p_choke/1e5],':k')
-% % plot([stoptime,stoptime],ylim(gca),':k')
-% % hold off
-% xlabel('Time, s')
-% ylabel('Injector Downstream Pressure, bar')
-
-% subplot(2,3,5)
-% plot(logtab.t,logtab.injector_T2,'k','LineWidth',2)
-% grid on
-% xlabel('Time, s')
-% ylabel('Injector Downstream Temperature, K')
 
 %% Plot Simulation Output as station conditions
 P_idxs = [3,5:2:length(varnames)];
@@ -254,7 +267,7 @@ Plabels = ["Tank",systab.PartName{:}];
 figure
 mesh(X,Y,station_Ps)
 view(45,15)
-title('Pressure Drop Through Main Methane Feed System')
+title('Pressure Drop Through Igniter Oxygen Feed System')
 xlabel('Component')
 ylabel('Time, s')
 zlabel('Pressure, bar')
@@ -263,10 +276,10 @@ xticklabels(Plabels)
 figure
 plot(xs,station_Ps(1,:),'-k','DisplayName','t = 0 s','LineWidth',2)
 hold on
-plot(xs,station_Ps(find(logtab.t == 5),:),'--k','DisplayName','t = 5 s','LineWidth',2)
-plot(xs,station_Ps(find(logtab.t == 10),:),'-.k','DisplayName','t = 10 s','LineWidth',2)
+plot(xs,interp1(logtab.t,station_Ps,3.33333),'--k','DisplayName','t = 5 s','LineWidth',2)
+plot(xs,interp1(logtab.t,station_Ps,6.66667),'-.k','DisplayName','t = 10 s','LineWidth',2)
 plot(xs,station_Ps(end,:),':k','DisplayName','t = 15 s','LineWidth',2)
-title('Pressure Drop Through Main Methane Feed System')
+title('Pressure Drop Through Igniter Oxygen Feed System')
 xlabel('Component')
 ylabel('Pressure, bar')
 legend('Location','northeast')
@@ -275,8 +288,17 @@ xticklabels(Plabels)
 grid on
 hold off
 
+% %% Print key outputs
+% fprintf('Injector Outlet Pressure: %0.4f bar\n',logtab.ig_P2(end)/1e5)
+% fprintf('                    mdot: %0.4f kg/s\n',logtab.mdot(end))
+% fprintf('Chamber Pressure at mdot: %0.4f bar\n',mdotO2Pc(logtab.mdot(end))/1e5)
+% disp(systab)
+
+
 %% Print key outputs
-fprintf('Injector Outlet Pressure: %0.4f bar\n',logtab.injector_P2(end)/1e5)
-fprintf('                    mdot: %0.4f kg/s\n',logtab.mdot(end))
-fprintf('Chamber Pressure at mdot: %0.4f bar\n',mdot2Pc(logtab.mdot(end))/1e5)
+fprintf('Igniter mdot: %0.6f kg/s\n',logtab.mdot(1))
+fprintf('Igniter Target mdot: %0.6f kg/s\n',ig_mdot_targ)
+% % fprintf('Main Combustion Chamber Pressure at mdot: %0.2f bar\n',mdot2Pc(logtab.ig_mdot(1))/1e5)
+fprintf('Igniter Outlet Pressure: %0.2f bar\n',logtab.ig_P2(1)/1e5)
+fprintf('Igniter Target Pressure: %0.2f bar\n',ig_Pc_targ/1e5)
 disp(systab)

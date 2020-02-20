@@ -85,7 +85,7 @@ ig_sys{6,1:2}=["ig","orifice"];ig_sys.Cd(6)=igF_Cd;ig_sys.A(6)=igF_A;% Igniter M
 
 % Termination time, time step
 t_step = 0.2;% sec
-t_stop = 10;% sec
+t_stop = 15;% sec
 n_steps = t_stop/t_step+1;
 
 
