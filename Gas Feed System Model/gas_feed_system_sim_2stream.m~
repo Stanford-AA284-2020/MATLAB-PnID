@@ -45,6 +45,7 @@ RGMF_droop = 20349856;% Pa/(kg/s), Regulator outlet pressure droop from Tescom 2
 orif_D = 3.85;% mm, Flow Control Orifice Size
 orif_A = pi*(orif_D/(2*1000))^2;% m^2
 orif_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
+orif_Cv = 0.16;% Swagelok High-Flow Metering Valve
 % A_injF = orifice_size(Methane,Pc2mdot(Pc_target),0.4,0.61,41.8e5,224);% m^2
 injF_A = 2.75e-5;% m^2
 injF_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
@@ -54,7 +55,8 @@ inj_sys = make_systab(n_inj_pt);
 inj_sys.Choked = repelem("N",n_inj_pt)';
 inj_sys{1,1:2}=["RGMF","regulator"];inj_sys.Cv(1)=0.3;inj_sys.RegP2(1)=RGMF_P2_reg;inj_sys.RegDroop(1)=RGMF_droop;% Tescom 26-2095TA470AN
 inj_sys{2,1:2}=["BVMF1","valve"];inj_sys.Cv(2)=6.0;inj_sys.A(2)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
-inj_sys{3,1:2}=["ORMF","valve"];inj_sys.Cv(3)=orif_Cv;% Swagelok High-Flow Metering Valve
+% inj_sys{3,1:2}=["ORMF","orifice"];inj_sys.Cd(3)=orif_Cd;inj_sys.A(3)=orif_A;% Flow Control Orifice
+inj_sys{3,1:2}=["ORMF","valve"];inj_sys.Cv(3)=orif_Cv;inj_sys.A(3)=orif_A;% Flow Control Orifice
 inj_sys{4,1:2}=["CKMF","valve"];inj_sys.Cv(4)=1.9;% CheckAll U3CSSTF0.500SS check valve
 inj_sys{5,1:2}=["BVMF2","valve"];inj_sys.Cv(5)=6.0;inj_sys.A(5)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
 inj_sys{6,1:2}=["inj","orifice"];inj_sys.Cd(6)=injF_Cd;inj_sys.A(6)=injF_A;% Main Injector Methane Orifices
