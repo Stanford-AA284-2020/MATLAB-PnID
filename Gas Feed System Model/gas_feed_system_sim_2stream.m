@@ -40,13 +40,13 @@ tank_sys{1,1:2}=["HVF","valve"];tank_sys.Cv=HVF_Cv;
 inj_Pc_targ = 10e5;% Pa, 10 bar
 inj_mdot_targ = Pc2mdot(inj_Pc_targ);% kg/s
 
-RGMF_P2_reg = 50e5;% Pa
+RGMF_P2_reg = 55e5;% Pa
 RGMF_droop = 20349856;% Pa/(kg/s), Regulator outlet pressure droop from Tescom 26-2064D24A270 (catalog flow tables)
-orif_D = 3.85;% mm, Flow Control Orifice Size
+orif_D = 3.8;% mm, Flow Control Orifice Size
 orif_A = pi*(orif_D/(2*1000))^2;% m^2
 orif_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
 % A_injF = orifice_size(Methane,Pc2mdot(Pc_target),0.4,0.61,41.8e5,224);% m^2
-injF_A = 2.75e-5;% m^2
+injF_A = 3.7e-5;% m^2
 injF_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
 
 n_inj_pt = 6;
@@ -66,7 +66,7 @@ ig_mdot_targ = 0.00110279054076074;% kg/s
 
 RGIF_P2_reg = 32e5;% Pa
 RGIF_droop = 111924205;% Pa/(kg/s), Regulator outlet pressure droop from Victor SR4J
-meter_Cv = 0.0098;% Metering Valve Cv<=0.03
+meter_Cv = 0.011;% Metering Valve Cv<=0.03
 igF_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
 igF_A = 7.59E-07;% m^2, From igniter spreadsheet
 
@@ -343,7 +343,7 @@ figure
 subplot(1,3,1)% Show mdots large
 sgtitle('Methane Mass Flow Rates')
 plot(logtab.t,logtab.sys_mdot,'k','LineWidth',2)
-ylim([min(logtab.sys_mdot)*0.9,max(logtab.sys_mdot)*1.1])
+% ylim([min(logtab.sys_mdot)*0.9,max(logtab.sys_mdot)*1.1])
 title('Total')
 xlabel('Time, s')
 xlim([0 logtab.t(end)])
@@ -351,7 +351,7 @@ ylabel('Mass Flow Rate, kg/s')
 
 subplot(1,3,2)% Show mdots large
 plot(logtab.t,logtab.inj_mdot,'k','LineWidth',2)
-ylim([min(logtab.inj_mdot)*0.9,max(logtab.inj_mdot)*1.1])
+% ylim([min(logtab.inj_mdot)*0.9,max(logtab.inj_mdot)*1.1])
 title('Main Injector')
 xlabel('Time, s')
 xlim([0 logtab.t(end)])
@@ -359,7 +359,7 @@ xlim([0 logtab.t(end)])
 
 subplot(1,3,3)% Show mdots large
 plot(logtab.t,logtab.ig_mdot,'k','LineWidth',2)
-ylim([min(logtab.ig_mdot)*0.9,max(logtab.ig_mdot)*1.1])
+% ylim([min(logtab.ig_mdot)*0.9,max(logtab.ig_mdot)*1.1])
 title('Igniter')
 xlabel('Time, s')
 xlim([0 logtab.t(end)])

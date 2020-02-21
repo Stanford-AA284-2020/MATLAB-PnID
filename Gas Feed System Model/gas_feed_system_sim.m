@@ -136,9 +136,9 @@ wbar = waitbar(0,'Running Simulation');
 for itr=1:n_steps
 
 % Find mdot for given tank conditions
-mdot_step = 1e-2;% kg/s
+mdot_step = 1e-4;% kg/s
 mdot_coef = 0.5;% Step size refinement coefficient
-mdot_tol = 1e-6;% convergence criterion
+mdot_tol = 1e-8;% convergence criterion
 mdot_test = mdot_step; % Initialize mdot_test
 systab.P1(1) = Ptank;
 systab.T1(1) = Ttank;
@@ -244,27 +244,52 @@ end
 close(wbar)
 
 
-%% Plot Simulation Output as mdot, in & out P & T
+%% Plot tank conditions, mass flow rates
 figure
-subplot(2,2,1)
-sgtitle('Tank and Orifice Fluid Conditions During Blowdown')
+% subplot(2,4,1)
+% sgtitle('Methane Tank Fluid Conditions & Subsystem Mass Flow Rates')
 plot(logtab.t,logtab.Ptank/1e5,'k','LineWidth',2)
 grid on
 xlabel('Time, s')
-ylabel('Tank Pressure, bar')
+ylabel('Pressure, bar')
+title('Oxygen Tank Pressure')
 
-subplot(2,2,3)
+figure
+% subplot(2,4,5)
 plot(logtab.t,logtab.Ttank,'k','LineWidth',2)
 grid on
 xlabel('Time, s')
-ylabel('Tank Temperature, K')
+ylabel('Temperature, K')
+title('Oxygen Tank Temperature')
 
-subplot(2,2,[2,4])% Show mdot large
+figure
 plot(logtab.t,logtab.mdot,'k','LineWidth',2)
-grid on
-ylim([logtab.mdot(end)*0.99,logtab.mdot(1)*1.01])
+% ylim([min(logtab.mdot)*0.9,max(logtab.mdot)*1.1])
+title('Igniter Oxygen Mass Flow Rate')
 xlabel('Time, s')
-ylabel('Igniter Oxygen Mass Flow Rate, kg/s')
+xlim([0 logtab.t(end)])
+ylabel('Mass Flow Rate, kg/s')
+
+% figure
+% subplot(2,2,1)
+% sgtitle('Tank and Orifice Fluid Conditions During Blowdown')
+% plot(logtab.t,logtab.Ptank/1e5,'k','LineWidth',2)
+% grid on
+% xlabel('Time, s')
+% ylabel('Tank Pressure, bar')
+% 
+% subplot(2,2,3)
+% plot(logtab.t,logtab.Ttank,'k','LineWidth',2)
+% grid on
+% xlabel('Time, s')
+% ylabel('Tank Temperature, K')
+
+% subplot(2,2,[2,4])% Show mdot large
+% plot(logtab.t,logtab.mdot,'k','LineWidth',2)
+% grid on
+% ylim([logtab.mdot(end)*0.99,logtab.mdot(1)*1.01])
+% xlabel('Time, s')
+% ylabel('Igniter Oxygen Mass Flow Rate, kg/s')
 
 
 %% Plot Simulation Output as station conditions
@@ -281,7 +306,7 @@ Plabels = ["Tank",systab.PartName{:}];
 figure
 mesh(X,Y,station_Ps)
 view(45,15)
-title('Pressure Drop Through Igniter Oxygen Feed System')
+title('Pressure Drop Through Igniter Oxygen Feed')
 xlabel('Component')
 ylabel('Time, s')
 zlabel('Pressure, bar')
@@ -293,7 +318,7 @@ hold on
 plot(xs,interp1(logtab.t,station_Ps,logtab.t(end)*1/3),'--k','DisplayName',sprintf('t = %0.2f s',logtab.t(end)*1/3),'LineWidth',2)
 plot(xs,interp1(logtab.t,station_Ps,logtab.t(end)*2/3),'-.k','DisplayName',sprintf('t = %0.2f s',logtab.t(end)*2/3),'LineWidth',2)
 plot(xs,station_Ps(end,:),':k','DisplayName',sprintf('t = %0.2f s',logtab.t(end)),'LineWidth',2)
-title('Pressure Drop Through Igniter Oxygen Feed System')
+title('Pressure Drop Through Igniter Oxygen Feed')
 xlabel('Component')
 ylabel('Pressure, bar')
 legend('Location','northeast')
