@@ -64,9 +64,9 @@ inj_sys{6,1:2}=["inj","orifice"];inj_sys.Cd(6)=injF_Cd;inj_sys.A(6)=injF_A;% Mai
 ig_Pc_targ = convpres(200,"psi","Pa");% Pa
 ig_mdot_targ = 0.00110279054076074;% kg/s
 
-RGIF_P2_reg = 32e5;% Pa
+RGIF_P2_reg = 34e5;% Pa
 RGIF_droop = 111924205;% Pa/(kg/s), Regulator outlet pressure droop from Victor SR4J
-meter_Cv = 0.011;% Metering Valve Cv<=0.03
+meter_Cv = 0.0105;% Metering Valve Cv<=0.03
 igF_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
 igF_A = 7.59E-07;% m^2, From igniter spreadsheet
 
@@ -74,10 +74,10 @@ n_ig_pt = 6;
 ig_sys = make_systab(n_ig_pt);
 ig_sys.Choked = repelem("N",n_ig_pt)';
 ig_sys{1,1:2}=["RGIF","regulator"];ig_sys.Cv(1)=0.1147;ig_sys.RegP2(1)=RGIF_P2_reg;ig_sys.RegDroop(1)=RGIF_droop;% Victor SR4J
-ig_sys{2,1:2}=["BVIF","valve"];ig_sys.Cv(2)=6.0;ig_sys.A(2)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
+ig_sys{2,1:2}=["SVIF1","valve"];ig_sys.Cv(2)=0.04;ig_sys.A(2)=pi*(3/64/2*0.0254)^2;% Parker Skinner 71216SN2FU00N0C111C2 Solenoid Valve
 ig_sys{3,1:2}=["NVIF","valve"];ig_sys.Cv(3)=meter_Cv;% Swagelok SS-4MG2-MH Flow Metering Valve, Vernier Handle
 ig_sys{4,1:2}=["CKIF","valve"];ig_sys.Cv(4)=1.9;% CheckAll U3CSSTF.500SS check valve
-ig_sys{5,1:2}=["SVIF","valve"];ig_sys.Cv(5)=0.04;ig_sys.A(5)=pi*(3/64/2*0.0254)^2;% Parker Skinner 71216SN2FU00N0C111C2 Solenoid Valve
+ig_sys{5,1:2}=["SVIF2","valve"];ig_sys.Cv(5)=0.04;ig_sys.A(5)=pi*(3/64/2*0.0254)^2;% Parker Skinner 71216SN2FU00N0C111C2 Solenoid Valve
 ig_sys{6,1:2}=["ig","orifice"];ig_sys.Cd(6)=igF_Cd;ig_sys.A(6)=igF_A;% Igniter Methane Orifice
 
 
