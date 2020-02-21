@@ -54,7 +54,7 @@ inj_sys = make_systab(n_inj_pt);
 inj_sys.Choked = repelem("N",n_inj_pt)';
 inj_sys{1,1:2}=["RGMF","regulator"];inj_sys.Cv(1)=0.3;inj_sys.RegP2(1)=RGMF_P2_reg;inj_sys.RegDroop(1)=RGMF_droop;% Tescom 26-2095TA470AN
 inj_sys{2,1:2}=["BVMF1","valve"];inj_sys.Cv(2)=6.0;inj_sys.A(2)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
-inj_sys{3,1:2}=["ORMF","valve"];inj_sys.Cv(3)=orif_Cv;% Swagelok High-Flow Metering Valve
+inj_sys{3,1:2}=["ORMF","orifice"];inj_sys.Cd(3)=orif_Cd;inj_sys.A(3)=orif_A;% Mass Flow Metering Orifice
 inj_sys{4,1:2}=["CKMF","valve"];inj_sys.Cv(4)=1.9;% CheckAll U3CSSTF0.500SS check valve
 inj_sys{5,1:2}=["BVMF2","valve"];inj_sys.Cv(5)=6.0;inj_sys.A(5)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
 inj_sys{6,1:2}=["inj","orifice"];inj_sys.Cd(6)=injF_Cd;inj_sys.A(6)=injF_A;% Main Injector Methane Orifices
@@ -82,6 +82,10 @@ ig_sys{6,1:2}=["ig","orifice"];ig_sys.Cd(6)=igF_Cd;ig_sys.A(6)=igF_A;% Igniter M
 
 
 %% Simulation Setup
+% Isothermal or isentropic temp correlation - isothermal most conservative
+% on mass flow, isentropic most conservative on condensation & temps
+isothermal = true;
+
 
 % Termination time, time step
 t_step = 0.2;% sec
@@ -134,11 +138,16 @@ while true
     if length(itm_out) > 1 % If unchoked, store P2, T2
         tank_sys.Choked = "N";
         tank_sys.P2 = itm_out(1);
-        tank_sys.T2 = itm_out(2);
         inj_sys.P1(1) = tank_sys.P2;
-        inj_sys.T1(1) = tank_sys.T2;
         ig_sys.P1(1) = tank_sys.P2;
-        ig_sys.T1(1) = tank_sys.T2;
+        if isothermal % Isothermal or isentropic temp correlation
+            inj_sys.T1(1) = tank_sys.T1;
+            ig_sys.T1(1) = tank_sys.T1;
+        else
+            tank_sys.T2 = itm_out(2);
+            inj_sys.T1(1) = tank_sys.T2;
+            ig_sys.T1(1) = tank_sys.T2;
+        end
     else % if choked, log choke location, step back, and refine step size
         tank_sys.Choked = "Y";
         inj_sys.Choked = repelem("N",n_inj_pt)';
@@ -174,7 +183,11 @@ while true
         % If unchoked, add P2, T2 to system table
         if length(itm_out) > 1
             inj_sys.P2(itm) = itm_out(1);
-            inj_sys.T2(itm) = itm_out(2);
+            if isothermal % Isothermal or isentropic temp correlation
+                inj_sys.T2(itm) = inj_sys.T1(itm);
+            else
+                inj_sys.T2(itm) = itm_out(2);
+            end
         else % if choked, log choke location
             inj_sys.Choked = repelem("N",n_inj_pt)';
             inj_sys.Choked(itm) = "Y";
@@ -206,7 +219,11 @@ while true
         % If unchoked, add P2, T2 to system table
         if length(itm_out) > 1
             ig_sys.P2(itm) = itm_out(1);
-            ig_sys.T2(itm) = itm_out(2);
+            if isothermal % Isothermal or isentropic temp correlation
+                ig_sys.T2(itm) = ig_sys.T1(itm);
+            else
+                ig_sys.T2(itm) = itm_out(2);
+            end
         else % if choked, log choke location
             ig_sys.Choked = repelem("N",n_ig_pt)';
             ig_sys.Choked(itm) = "Y";
