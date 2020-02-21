@@ -290,9 +290,9 @@ xticklabels(Plabels)
 figure
 plot(xs,station_Ps(1,:),'-k','DisplayName','t = 0 s','LineWidth',2)
 hold on
-plot(xs,interp1(logtab.t,station_Ps,3.33333),'--k','DisplayName','t = 5 s','LineWidth',2)
-plot(xs,interp1(logtab.t,station_Ps,6.66667),'-.k','DisplayName','t = 10 s','LineWidth',2)
-plot(xs,station_Ps(end,:),':k','DisplayName','t = 15 s','LineWidth',2)
+plot(xs,interp1(logtab.t,station_Ps,logtab.t(end)*1/3),'--k','DisplayName',sprintf('t = %0.2f s',logtab.t(end)*1/3),'LineWidth',2)
+plot(xs,interp1(logtab.t,station_Ps,logtab.t(end)*2/3),'-.k','DisplayName',sprintf('t = %0.2f s',logtab.t(end)*2/3),'LineWidth',2)
+plot(xs,station_Ps(end,:),':k','DisplayName',sprintf('t = %0.2f s',logtab.t(end)),'LineWidth',2)
 title('Pressure Drop Through Igniter Oxygen Feed System')
 xlabel('Component')
 ylabel('Pressure, bar')

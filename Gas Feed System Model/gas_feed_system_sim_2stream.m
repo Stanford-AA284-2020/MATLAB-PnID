@@ -323,33 +323,47 @@ close(wbar)
 
 %% Plot tank conditions, mass flow rates
 figure
-subplot(2,4,1)
-sgtitle('Methane Tank Fluid Conditions & Subsystem Mass Flow Rates')
+% subplot(2,4,1)
+% sgtitle('Methane Tank Fluid Conditions & Subsystem Mass Flow Rates')
 plot(logtab.t,logtab.Ptank/1e5,'k','LineWidth',2)
 grid on
 xlabel('Time, s')
-ylabel('Methane Tank Pressure, bar')
+ylabel('Pressure, bar')
+title('Methane Tank Pressure')
 
-subplot(2,4,5)
+figure
+% subplot(2,4,5)
 plot(logtab.t,logtab.Ttank,'k','LineWidth',2)
 grid on
 xlabel('Time, s')
-ylabel('Methane Tank Temperature, K')
+ylabel('Temperature, K')
+title('Methane Tank Temperature')
 
-subplot(2,4,[2,6])% Show mdots large
+figure
+subplot(1,3,1)% Show mdots large
+sgtitle('Methane Mass Flow Rates')
 plot(logtab.t,logtab.sys_mdot,'k','LineWidth',2)
-ylim([0,logtab.sys_mdot(1)*1.1])
-ylabel('Total Methane Flow Rate, kg/s')
+ylim([min(logtab.sys_mdot)*0.9,max(logtab.sys_mdot)*1.1])
+title('Total')
+xlabel('Time, s')
+xlim([0 logtab.t(end)])
+ylabel('Mass Flow Rate, kg/s')
 
-subplot(2,4,[3,7])% Show mdots large
+subplot(1,3,2)% Show mdots large
 plot(logtab.t,logtab.inj_mdot,'k','LineWidth',2)
-ylim([0,logtab.inj_mdot(1)*1.1])
-ylabel('Main Injector Methane Flow Rate, kg/s')
+ylim([min(logtab.inj_mdot)*0.9,max(logtab.inj_mdot)*1.1])
+title('Main Injector')
+xlabel('Time, s')
+xlim([0 logtab.t(end)])
+% ylabel('Mass Flow Rate, kg/s')
 
-subplot(2,4,[4,8])% Show mdots large
+subplot(1,3,3)% Show mdots large
 plot(logtab.t,logtab.ig_mdot,'k','LineWidth',2)
-ylim([0,logtab.ig_mdot(1)*1.1])
-ylabel('Igniter Methane Flow Rate, kg/s')
+ylim([min(logtab.ig_mdot)*0.9,max(logtab.ig_mdot)*1.1])
+title('Igniter')
+xlabel('Time, s')
+xlim([0 logtab.t(end)])
+% ylabel('Mass Flow Rate, kg/s')
 
 
 %% Plot Injector station conditions
@@ -363,22 +377,22 @@ ys = logtab.t;
 % labels = logtab.Properties.VariableNames;
 Plabels = ["Tank","HVF",inj_sys.PartName{:}];
 
-figure
-mesh(X,Y,inj_Ps)
-view(45,15)
-title('Pressure Drop Through Main Injector Methane Feed')
-xlabel('Component')
-ylabel('Time, s')
-zlabel('Pressure, bar')
-xticks(xs)
-xticklabels(Plabels)
+% figure
+% mesh(X,Y,inj_Ps)
+% view(45,15)
+% title('Pressure Drop Through Main Injector Methane Feed')
+% xlabel('Component')
+% ylabel('Time, s')
+% zlabel('Pressure, bar')
+% xticks(xs)
+% xticklabels(Plabels)
 
 figure
 plot(xs,inj_Ps(1,:),'-k','DisplayName','t = 0 s','LineWidth',2)
 hold on
-plot(xs,interp1(logtab.t,inj_Ps,3.33333),'--k','DisplayName','t = 3.33 s','LineWidth',2)
-plot(xs,interp1(logtab.t,inj_Ps,6.66667),'-.k','DisplayName','t = 6.66 s','LineWidth',2)
-plot(xs,inj_Ps(end,:),':k','DisplayName','t = 10 s','LineWidth',2)
+plot(xs,interp1(logtab.t,inj_Ps,logtab.t(end)*1/3),'--k','DisplayName',sprintf('t = %0.2f s',logtab.t(end)*1/3),'LineWidth',2)
+plot(xs,interp1(logtab.t,inj_Ps,logtab.t(end)*2/3),'-.k','DisplayName',sprintf('t = %0.2f s',logtab.t(end)*2/3),'LineWidth',2)
+plot(xs,inj_Ps(end,:),':k','DisplayName',sprintf('t = %0.2f s',logtab.t(end)),'LineWidth',2)
 title('Pressure Drop Through Main Injector Methane Feed')
 xlabel('Component')
 ylabel('Pressure, bar')
@@ -400,22 +414,22 @@ ys = logtab.t;
 % labels = logtab.Properties.VariableNames;
 Plabels = ["Tank","HVF",ig_sys.PartName{:}];
 
-figure
-mesh(X,Y,ig_Ps)
-view(45,15)
-title('Pressure Drop Through Igniter Methane Feed')
-xlabel('Component')
-ylabel('Time, s')
-zlabel('Pressure, bar')
-xticks(xs)
-xticklabels(Plabels)
+% figure
+% mesh(X,Y,ig_Ps)
+% view(45,15)
+% title('Pressure Drop Through Igniter Methane Feed')
+% xlabel('Component')
+% ylabel('Time, s')
+% zlabel('Pressure, bar')
+% xticks(xs)
+% xticklabels(Plabels)
 
 figure
 plot(xs,ig_Ps(1,:),'-k','DisplayName','t = 0 s','LineWidth',2)
 hold on
-plot(xs,interp1(logtab.t,ig_Ps,3.33333),'--k','DisplayName','t = 3.33 s','LineWidth',2)
-plot(xs,interp1(logtab.t,ig_Ps,6.66667),'-.k','DisplayName','t = 6.66 s','LineWidth',2)
-plot(xs,ig_Ps(end,:),':k','DisplayName','t = 10 s','LineWidth',2)
+plot(xs,interp1(logtab.t,ig_Ps,logtab.t(end)*1/3),'--k','DisplayName',sprintf('t = %0.2f s',logtab.t(end)*1/3),'LineWidth',2)
+plot(xs,interp1(logtab.t,ig_Ps,logtab.t(end)*2/3),'-.k','DisplayName',sprintf('t = %0.2f s',logtab.t(end)*2/3),'LineWidth',2)
+plot(xs,ig_Ps(end,:),':k','DisplayName',sprintf('t = %0.2f s',logtab.t(end)),'LineWidth',2)
 title('Pressure Drop Through Igniter Methane Feed')
 xlabel('Component')
 ylabel('Pressure, bar')
