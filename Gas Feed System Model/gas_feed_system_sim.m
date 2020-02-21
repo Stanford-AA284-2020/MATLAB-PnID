@@ -107,8 +107,8 @@ rhotank = PREoS(medium,"rho",Ptank,Ttank);% kg/m^3
 
 %% Simulation Setup
 % Temperature correlation
-temp_interp = "isothermal";% Neglect Temperature Changes
-% temp_interp = "adiabatic";% Isenthalpic (Adiabatic)
+% temp_interp = "isothermal";% Neglect Temperature Changes
+temp_interp = "adiabatic";% Isenthalpic (Adiabatic)
 % temp_interp = "isentropic";% Maximum Temperature Change
 
 

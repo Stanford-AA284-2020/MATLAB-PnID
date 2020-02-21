@@ -84,8 +84,8 @@ ig_sys{6,1:2}=["ig","orifice"];ig_sys.Cd(6)=igF_Cd;ig_sys.A(6)=igF_A;% Igniter M
 %% Simulation Setup
 % Temperature correlation
 % temp_interp = "isothermal";% Neglect Temperature Changes
-% temp_interp = "adiabatic";% Isenthalpic (Adiabatic)
-temp_interp = "isentropic";% Maximum Temperature Change
+temp_interp = "adiabatic";% Isenthalpic (Adiabatic)
+% temp_interp = "isentropic";% Maximum Temperature Change
 
 
 % Termination time, time step

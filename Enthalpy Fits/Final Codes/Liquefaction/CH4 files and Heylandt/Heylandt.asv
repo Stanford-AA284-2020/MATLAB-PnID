@@ -1,0 +1,533 @@
+%%This script calculates properties at all states in a Heylandt
+%%liquefaction system. A fixed percentage of hydrogen is assumed to be
+%%present
+%%Rishav Choudhary - 06/01/17
+
+% Provide access to support files via the Matlab path.
+addpath 'Fundamental Relation Files' 
+addpath 'Fundamental Relation Data'
+addpath 'Setup Files' 
+addpath 'Property Files' 
+
+% Clean up and get ready to go.
+clear all; close all; clc;
+format compact
+fprintf('\n**************************************************************\n')
+Setup_Props_i;
+
+x = 0.6; % Expander Bleed Ratio
+eta_c = 1; % Compressor Efficiency
+eta_ex =1; % Expander Efficiency
+eff_1 = 1; % Heat Exchanger 1 Effectiveness
+eff_2 = 1; % Heat Exchanger 2 Effectiveness
+
+y_nH2 = 0.2; % Get this from the separator exit;
+m_dot = 1; % Assume
+m_e = m_dot*x;
+y_CH4 = 1 - y_nH2;
+
+%% Compressor & Expander Matching
+P1 = 2e5; % Change
+T1 = 550; % Change
+P2 = 100e5;
+
+r_nH2_1 = rv_iTP(nH2, T1, P1);
+h_nH2_1 = h_irT(nH2, r_nH2_1, T1);
+r_CH4_1 = rv_iTP(CH4, T1, P1);
+h_CH4_1 = h_irT(CH4, r_CH4_1, T1);
+s_nH2_1 = s_irT(nH2, r_nH2_1, T1);
+s_CH4_1 = s_irT(CH4, r_CH4_1, T1);
+
+
+H_1 = y_nH2*(h_nH2_1) + y_CH4*(h_CH4_1);
+S_1 = y_nH2*(s_nH2_1) + y_CH4*(s_CH4_1);
+
+
+
+
+% Compressor exit 
+% T2s = T_sp(y_nH2, S_1, P2, T1);
+% 
+% 
+% r_nH2_2 = rv_iTP(nH2, T2s, P2);
+% h_nH2_2 = h_irT(nH2, r_nH2_2, T2s);
+% r_CH4_2 = rv_iTP(CH4, T2s, P2);
+% h_CH4_2 = h_irT(CH4, r_CH4_2, T2s);
+% H_2s = y_nH2*(h_nH2_2) + y_CH4*(h_CH4_2);
+% W_compressor_s = (H_2s - H_1);
+% W_compressor_act = eta_c*W_compressor_s;
+% 
+% H2 = H1 + W_compressor_act;
+% 
+% T2 = T_hp(y_nH2, H_2, P2, T2s);
+
+% Isothermal compressor
+T2 = T1;
+
+r_nH2_2 = rv_iTP(nH2, T2, P2);
+h_nH2_2 = h_irT(nH2, r_nH2_2, T2);
+r_CH4_2 = rv_iTP(CH4, T2, P2);
+h_CH4_2 = h_irT(CH4, r_CH4_2, T2);
+s_nH2_2 = s_irT(nH2, r_nH2_2, T2);
+s_CH4_2 = s_irT(CH4, r_CH4_2, T2);
+
+H_2 = y_nH2*(h_nH2_2) + y_CH4*(h_CH4_2);
+S_2 = y_nH2*(s_nH2_2) + y_CH4*(s_CH4_2);
+Cp_2 = y_nH2*(Cp_irT(nH2, r_nH2_2, T2)) + y_CH4*(Cp_irT(CH4, r_CH4_2, T2));
+
+% Expander section
+Pe = P1; 
+switcher = 0; % To select expander in T_sp
+S2_in = S_2*x;
+Te = T_sp(y_nH2, S2_in, Pe, T2, switcher, x);
+
+r_nH2_e = rv_iTP(nH2, Te, P1);
+h_nH2_e = h_irT(nH2, r_nH2_e, Te);
+r_CH4_e = rv_iTP(CH4, Te, P1);
+h_CH4_e = h_irT(CH4, r_CH4_e, Te);
+s_nH2_e = s_irT(nH2, r_nH2_e, Te);
+s_CH4_e = s_irT(CH4, r_CH4_e, Te);
+
+S2_e = S2_in;
+H_e = y_nH2*(h_nH2_e) + y_CH4*(h_CH4_e);
+H_e = H_e*x;
+W_expander_out = (x*H_2) - H_e
+
+W_compressor_in = W_expander_out
+Q_compressor_out = H_1 - H_2 + W_compressor_in
+
+%% The JT Expansion Valve
+quality = 0.5; % Tweak it
+P3 = P2; 
+P4 = P3; 
+P5 = P1;
+
+[Tsat rf rg] = Saturation_iP(CH4,P5);
+T5 = Tsat;
+Tf = T5; Pf = P5;
+Tg = T5; Pg = P5;
+P6 = P5; P7 = P5;
+
+hf_CH4 = h_irT(CH4, rf, Tsat);
+hg_CH4 = h_irT(CH4, rg, Tsat);
+rg_nH2 = rv_iTP(nH2, T5, P5);
+hg_nH2 = h_irT(nH2, rg_nH2, T5);
+
+h_CH4_5 = hf_CH4 + quality*(hg_CH4 - hf_CH4);
+
+%At state 5 or 4, the mass fraction of H2 is still the same
+H_5  = (hg_nH2*y_nH2) + (h_CH4_5*y_CH4);
+H_5 = H_5*(1-x);
+H_4 = H_5;
+T4 = T_hp(y_nH2, H_4, P4, T5, 0, 1-x)
+
+% Get entropies for all the states
+sf_CH4 = s_irT(CH4, rf, Tsat);
+sg_CH4 = s_irT(CH4, rg, Tsat);
+sg_nH2 = s_irT(nH2, rg_nH2, T5);
+
+s_CH4_5 = sf_CH4 + quality*(sg_CH4 - sf_CH4);
+S_5  = (sg_nH2*y_nH2) + (s_CH4_5*y_CH4);
+r_CH4_4 = rl_iTP(CH4, T4, P4); 
+r_nH2_4 = rv_iTP(CH4, T4, P4);
+s_CH4_4 = s_irT(CH4, r_CH4_4, T4);
+s_nH2_4 = s_irT(nH2, r_nH2_4, T4);
+S_4 = (s_nH2_4*y_nH2) + (s_CH4_4*y_CH4);
+
+% New mass fractions
+f = 1-quality;
+
+% At state g
+m_H2 = y_nH2*(1 - x);
+m_CH4 = y_CH4*(1-x)*(1-f);
+y_nH2_g = m_H2/(m_H2 + m_CH4);
+y_CH4_g = 1 - y_nH2_g;
+m_tot_g = (m_H2 + m_CH4);
+
+H_g = y_nH2_g*(hg_nH2) + y_CH4_g*(hg_CH4);
+S_g = y_nH2_g*(sg_nH2) + y_CH4_g*(sg_CH4);
+
+%At state 1_exit
+m_tot_1_exit = m_tot_g + x;
+m_H2_1_exit = x*y_nH2 + m_tot_g*y_nH2_g;
+m_CH4_1_exit = m_tot_1_exit - m_H2_1_exit;
+y_nH2_1_exit = m_H2_1_exit/m_tot_1_exit;
+y_CH4_1_exit = 1 - y_nH2_1_exit;
+
+
+H_1_exit = (y_nH2_1_exit*(h_nH2_1) + y_CH4_1_exit*(h_CH4_1))*m_tot_1_exit;
+S_1_exit = (y_nH2_1_exit*(s_nH2_1) + y_CH4_1_exit*(s_CH4_1))*m_tot_1_exit;
+
+
+%% Heat Exchangers
+
+% I am not proud of what I am doing, but this is my first attempt!
+
+% dT = 0.1;
+% 
+% for T7 = Tg:dT:T2
+%     C_min_1a = Cp_irT(CH4, r_CH4_1, T1);
+%     C_min_1b = Cp_irT(nH2, r_nH2_1, T1);
+%     C_min = y_nH2_1_exit*C_min_1b + y_CH4_1_exit*C_min_1a;
+%     
+%     if C_min > Cp_2
+%         C_min = Cp_2;
+%     end
+%     
+%     Qmax = C_min*(T2 - T7)*(1-x);
+%     
+%     r_nH2_7 = rv_iTP(nH2, T7, P7);
+%     h_nH2_7 = h_irT(nH2, r_nH2_7, T7);
+%     r_CH4_7 = rv_iTP(CH4, T7, P7);
+%     h_CH4_7 = h_irT(CH4, r_CH4_7, T7);
+%     s_nH2_7 = s_irT(nH2, r_nH2_7, T7);
+%     s_CH4_7 = s_irT(CH4, r_CH4_7, T7);
+% 
+%     H_7 = (y_nH2_1_exit*(h_nH2_7) + y_CH4_1_exit*(h_CH4_7))*m_tot_1_exit;
+%     S_7 = (y_nH2_1_exit*(s_nH2_7) + y_CH4_1_exit*(s_CH4_7))*m_tot_1_exit;
+%     
+%     Qexchange = H_1_exit - H_7;
+%     error = abs((Qexchange - Qmax)/Qmax)
+%     
+%     if error < 1e-3
+%         break;
+%     end
+% end
+
+% Approach - Fix the temperature at the exit of the cold stream of the 2nd
+% Heat Exchanger
+
+% At state 6
+T6 = 350;
+r_nH2_6 = rv_iTP(nH2, T6, P6);
+r_CH4_6 = rv_iTP(CH4, T6, P6);
+h_nH2_6 = h_irT(nH2, r_nH2_6, T6);
+h_CH4_6 = h_irT(CH4, r_CH4_6, T6);
+s_nH2_6 = s_irT(nH2, r_nH2_6, T6);
+s_CH4_6 = s_irT(CH4, r_CH4_6, T6);
+
+y_nH2_6 = y_nH2_g;
+y_CH4_6 = 1 - y_nH2_6;
+m_tot_6 = m_tot_g;
+H_6 = (y_nH2_6*(h_nH2_6) + y_CH4_6*(h_CH4_6))*m_tot_6;
+S_6 = (y_nH2_6*(s_nH2_6) + y_CH4_6*(s_CH4_6))*m_tot_6;
+
+Q_exchange_HX2 = H_6 - H_g;
+
+% At State 3
+H_3 = H_4 + Q_exchange_HX2;
+T3 = T_hp(y_nH2, H_3, P3, T4, 0, x);
+r_CH4_3 = rv_iTP(CH4, T3, P3); 
+r_nH2_3 = rv_iTP(CH4, T3, P3);
+h_CH4_3 = h_irT(CH4, r_CH4_3, T3);
+s_CH4_3 = s_irT(CH4, r_CH4_3, T3);
+s_nH2_3 = s_irT(nH2, r_nH2_3, T3);
+S_3 = (s_nH2_3*y_nH2) + (s_CH4_3*y_CH4);
+
+% The last state, the final state.... 7
+H_7 = H_e + H_6;
+m_nH2_7 = y_nH2*x + y_nH2_6*m_tot_6;
+m_tot_7 = m_tot_6 + x;
+y_nH2_7 = m_nH2_7/m_tot_7;
+y_CH4_7 = 1 - y_nH2_7;
+T7 = T_hp(y_nH2_7, H_7, P7, Te, 0, m_tot_7)
+
+r_CH4_7 = rv_iTP(CH4, T7, P7); 
+r_nH2_7 = rv_iTP(CH4, T7, P7);
+h_CH4_7 = h_irT(CH4, r_CH4_7, T7);
+s_CH4_7 = s_irT(CH4, r_CH4_7, T7);
+s_nH2_7 = s_irT(nH2, r_nH2_7, T7);
+S_7 = (s_nH2_7*y_nH2) + (s_CH4_7*y_CH4);
+
+%% Assembling the quantities to be plotted
+T_stream_1 = [T1; T2; T3; T4; T5; Tf]; 
+T_stream_2 = [T5; Tg; T6; T7; T1]; 
+T_stream_3 = [T2; Te; T6];
+
+s_stream_1 = [s_CH4_1; s_CH4_2; s_CH4_3; s_CH4_4; s_CH4_5; sf_CH4];
+s_stream_2 = [s_CH4_5; sg_CH4; s_CH4_6; s_CH4_7; s_CH4_1];
+s_stream_3 = [s_CH4_2; s_CH4_e; s_CH4_6];
+
+S_Stream_1 = [S_1; S_2; S_3; S_4; S_5; sf_CH4];
+S_Stream_2 = [S_5; sg_CH4; S_6; S_7; S_1];
+S_Stream_3 = [S_2; S2_e; S_6];
+
+
+
+%% Plotting the isenthalps, isobars, and the vapordome
+hlist = linspace(h_CH4_5, h_CH4_1, 9);
+Plist = [1 2 4 20 40 80 100 200 ].*1e5;
+T_isent = []; s_isent = [];
+
+for i = 1:length(hlist)
+    h = hlist(i);
+    isent = get_isenthalps(h, Plist);
+    T_isent = [T_isent; isent(:,1)];
+    s_isent = [s_isent; isent(:,2)];
+end
+
+
+fprintf('Plotting T-s curves...\n')
+
+% Get the critical and triple data.
+Tc = Tcrit_i(CH4);
+rc = rcrit_i(CH4);
+Pc = Pcrit_i(CH4);
+sc = s_irT(CH4,rc,Tc);
+Tt = Ttrip_i(CH4);
+Pt = Ptrip_i(CH4);
+sft = s_irT(CH4,rftrip_i(CH4),Tt);
+sgt = s_irT(CH4,rgtrip_i(CH4),Tt);
+
+% Get the numerical critical and triple data.
+% Tc_num = 32.9380;
+% rc_num = 31.35997;
+[Tc_num, rc_num] = Critical_i(CH4);
+Pc_num = P_irT(CH4,rc_num,Tc_num);
+sc_num = s_irT(CH4,rc_num,Tc_num);
+[Pt_num rft_num rgt_num] = Saturation_iT(CH4,Tt);
+sft_num = s_irT(CH4,rft_num,Tt);
+sgt_num = s_irT(CH4,rgt_num,Tt);
+
+% Set the minimum T props.
+Tmin = Tt;
+Pmin = Pt_num;
+
+% Set the limits for data curves.
+Tmax = 700;
+Pmax = 500*100000;
+
+% Make a vapor dome.
+dT = (Tc_num-Tmin - 5)/100;
+i = 1;
+% Preallocate storage...
+Tsatline = zeros(101);
+sliqline = zeros(101);
+svapline = zeros(101);
+for T=Tmin:dT:Tc_num-5-dT    % Stop short of the critical point.
+    Tsatline(i) = T;
+    [Psat rf rg] = Saturation_iT(CH4,T);
+    sliqline(i) = s_irT(CH4,rf,T);
+    svapline(i) = s_irT(CH4,rg,T);
+    i = i+1;
+end
+Tsatline(i) = Tc;   % Add the critical point now.
+sliqline(i) = sc;
+svapline(i) = sc;
+
+% Start a set of isobaric curves.
+Plist = [1 2 5 10 20 40 80 100 200 ];  % Pressure in bar
+% Preallocate storage...
+Tpresline = zeros(length(Plist),50);
+spresline = zeros(length(Plist),50);
+for j=1:1:length(Plist)
+    P = Plist(j)*100000
+    flagL = 0;
+
+    % Check limits.
+    if P > Pcrit_i(CH4) 
+       % Compressed liquid
+       Tsat = Tmax;
+       flagL = 1
+   
+    
+%     if(P < Ptrip_i(CH4))
+%         disp('P out of bounds in Saturation_iP')
+%         return
+    
+    else
+        [Tsat rf rg] = Saturation_iP(CH4,P); 
+        sf = s_irT(CH4,rf,Tsat);
+        sg = s_irT(CH4,rg,Tsat);
+    end
+    
+    % Find the saturation state at this pressure.
+%     [Tsat rf rg] = Saturation_iP(CH4,P); 
+%     sf = s_irT(CH4,rf,Tsat);
+%     sg = s_irT(CH4,rg,Tsat);
+    
+    % Do the compressed liquid side.
+    if flagL == 0
+    
+        dT = (Tsat - Tmin)/50;
+        i = 1;
+        for T=Tmin:dT:Tsat-dT  % Stop short of saturation.
+            Tpresline(j,i) = T;
+            r = rl_iTP(CH4,T,P);
+            spresline(j,i) = s_irT(CH4,r,T);
+            i = i+1;
+        end
+
+    
+        Tpresline(j,i) = Tsat;   % Add the saturation point now.
+        spresline(j,i) = sf;
+        i = i+1;
+    
+
+        % Now go across the dome.
+        dq = 1/50;
+        for q=0+dq:dq:1-dq  % Stop short of saturation.
+            Tpresline(j,i) = Tsat;
+            spresline(j,i) = sf + q*(sg-sf);
+            i = i+1;
+        end
+
+        Tpresline(j,i) = Tsat;   % Add the saturation point now.
+        spresline(j,i) = sg;
+        i = i+1;
+
+        % Do the vapor side.
+        dT = (Tmax - Tsat)/150;
+        for T=Tsat+dT:dT:Tmax  % Start just above saturation.
+            Tpresline(j,i) = T;
+            r = rv_iTP(CH4,T,P);
+            spresline(j,i) = s_irT(CH4,r,T);
+            i = i+1;
+        end
+    
+
+    else
+        % Add isobars above the critical pressure.
+        dT = (Tmax - Tmin)/250;
+        for j=j+1:1:length(Plist)
+            P = Plist(j)*100000;       % In Pascals
+            i = 1;
+            for T=Tmin:dT:Tmax  % Stop short of saturation.
+                Tpresline(j,i) = T;
+                r = rl_iTP(CH4,T,P);
+                spresline(j,i) = s_irT(CH4,r,T);
+                i = i+1;
+            end
+        end
+    end
+end
+
+% Make the paths
+
+
+T_high_path_1 = find(Tpresline(8,:) > T2);
+T_high_path_1 = T_high_path_1(1,1) - 1;
+T_low_path_1 = find(Tpresline(8,:) > T4);
+
+T_high_path_2 = find(Tpresline(2,:) > T1);
+T_high_path_2 = T_high_path_2(1,1) - 1;
+T_low_path_2 = find(Tpresline(2,:) > Tg);
+
+path_1_Temperature = Tpresline(8, T_low_path_1: T_high_path_1)';
+path_1_entropy = spresline(8, T_low_path_1: T_high_path_1)';
+
+path_2_Temperature = Tpresline(2, T_low_path_2: T_high_path_2)';
+path_2_entropy = spresline(2, T_low_path_2: T_high_path_2)';
+
+path_sat_Temp = [Tf; T5; Tg];
+path_sat_s = [sf_CH4; s_CH4_5; sg_CH4];
+
+path_hot_isobar_Temp = [T4; path_1_Temperature; T2];
+path_hot_isobar_entropy = [s_CH4_4; path_1_entropy; s_CH4_2];
+
+path_JT_s = [s_isent(1:8,1);s_stream_1(4,1)];
+path_JT_Temp = [T_isent(1:8,1);T_stream_1(4,1)];
+
+path_cold_isobar_Temp = [Tg; path_2_Temperature; T1];
+path_cold_isobar_entropy = [sg_CH4; path_2_entropy; s_CH4_1];
+
+path_isothermic_Temp = [T1; T2];
+path_isothermic_entropy = [s_CH4_1; s_CH4_2];
+
+path_isentropic_Temp = [T2; Te];
+path_isentropic_entropy = [s_CH4_2; s_CH4_e];
+
+
+% Make the plot.
+figure(1)
+clf
+hold on
+for i=1:1:length(Plist)
+    plot(spresline(i,:)/1000,Tpresline(i,:),'Color',[.3 .3 1])
+end
+% for i=1:1:N_lines
+%     plot(senthline(i,:)/1000,Tenthline(i,:),'Color',[0 .6 0])
+% end
+plot(sliqline/1000,Tsatline,'k')
+plot(svapline/1000,Tsatline,'k')
+plot([sft_num sgt_num]/1000, [Tt Tt],'k')
+xlabel('Specific Entropy (kJ/kg-K)')
+ylabel('Temperature (K)')
+% for i=1:1:length(Plist)-1
+%     text(spresline(i,251)/1000,Tpresline(i,251)+6,...
+%         num2str(Plist(i)),'Color',[.1 .1 1])
+% end
+% i = length(Plist);
+% text(spresline(i,251)/1000-6,Tpresline(i,251)+6,...
+%     ['P = ',num2str(Plist(i)),' bar'],'Color',[.1 .1 1])
+% for i=1:1:N_lines-1
+%     text(senthline(i,Psteps)/1000,Tenthline(i,Psteps)-2,...
+%         num2str(hlist(i)),'Color',[0 .5 0])
+% end
+% i = length(hlist);
+% text(senthline(i,Psteps)/1000,Tenthline(i,Psteps)-2,...
+%     ['h = ',num2str(hlist(i)),' MJ/kg'],'Color',[0 .5 0])
+hloc_T = ones(9,1); hloc_s = ones(9,1);
+for i = 1:9
+    plot(s_isent(1+(i-1)*8:i*8)./1000, T_isent(1+(i-1)*8:i*8), 'g-');
+    hloc_s(i,1) = s_isent(i*8);
+    hloc_T(i,1) = T_isent(i*8);
+end
+hloc_s = hloc_s./1000;
+
+plotfixer
+% figure(1);
+hold on;
+plot(s_stream_1./1000, T_stream_1, 'or');
+
+plot(s_stream_2./1000, T_stream_2, 'or');
+plot(s_stream_3./1000, T_stream_3, 'or');
+%
+grid on
+axis([-7 2 100 650])
+plotfixer;
+
+hold on;
+
+plot(path_JT_s./1000, path_JT_Temp, '--m'); 
+hold on;
+plot(path_sat_s./1000, path_sat_Temp, '--m');
+plot(path_hot_isobar_entropy./1000, path_hot_isobar_Temp, '--m');
+plot(path_cold_isobar_entropy./1000, path_cold_isobar_Temp, '--m');
+plot(path_isothermic_entropy./1000, path_isothermic_Temp, '--m');
+plot(path_isentropic_entropy./1000, path_isentropic_Temp, '--m');
+plotfixer;
+
+string_states = {'  1', '  2', '  3', '  4', '  5', '  6', '  7', '  e','  f', '  g'};
+T_list = [T1, T2, T3, T4, T5, T6, T7, Te, Tf, Tg];
+s_list = [s_CH4_1, s_CH4_2, s_CH4_3, s_CH4_4, s_CH4_5, s_CH4_6, s_CH4_7, s_CH4_e, sf_CH4, sg_CH4]./1000;
+T_offset = 10*ones(1, length(T_list));
+s_offset = 0.1*ones(1, length(s_list));
+T_list = T_list + T_offset;
+s_list = s_list + s_offset;
+text(s_list, T_list, string_states);
+
+
+hlist_str = num2str(hlist./1e6);
+h_T_offset = 15*ones(length(hlist),1);
+h_s_offset = -1*ones(length(hlist),1);
+hloc_T = hloc_T + h_T_offset;
+hloc_s = hloc_s + h_s_offset;
+text(hloc_s, hloc_T, hlist_str);
+text(-6, 600, 'Enthalpy (MJ/kg)');
+
+Plist = [Plist(1:6); Plist(8:9)];
+Plist_str = num2str(Plist);
+Ploc_T = 150:25:
+text(hloc_s, hloc_T, hlist_str);
+text(-6, 600, 'Enthalpy (MJ/kg)');
+
+plotfixer;
+
+clearvars -except Tpresline spresline sliqline svapline s_isent Tsatline T_isent T_stream_1 T_stream_2 T_stream_3 s_stream_1 s_stream_2 s_stream_3 sft_num sgt_num Tt path_sat_Temp path_sat_s path_hot_isobar_Temp path_hot_isobar_entropy path_JT_s  path_JT_Temp path_cold_isobar_Temp path_cold_isobar_entropy path_isothermic_Temp path_isothermic_entropy path_isentropic_Temp path_isentropic_entropy
+
+% figure(2);
+% plot(S_Stream_1, T_stream_1, 'o-b');
+% hold on;
+% plot(S_Stream_2, T_stream_2, 'o-b');
+% plot(S_Stream_3, T_stream_3, 'o-b');
