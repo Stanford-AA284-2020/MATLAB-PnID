@@ -82,9 +82,10 @@ ig_sys{6,1:2}=["ig","orifice"];ig_sys.Cd(6)=igF_Cd;ig_sys.A(6)=igF_A;% Igniter M
 
 
 %% Simulation Setup
-% Isothermal or isentropic temp correlation - isothermal most conservative
-% on mass flow, isentropic most conservative on condensation & temps
-isothermal = true;
+% Temperature correlation
+% temp_interp = "isothermal";% Neglect Temperature Changes
+% temp_interp = "adiabatic";% Isenthalpic (Adiabatic)
+temp_interp = "isentropic";% Maximum Temperature Change
 
 
 % Termination time, time step
@@ -134,20 +135,20 @@ while true
     tank_mdot_test = inj_mdot_test+ig_mdot_test;
     tank_sys.P1 = Ptank;
     tank_sys.T1 = Ttank;
-    itm_out = valve(medium,tank_mdot_test,tank_sys.P1,tank_sys.T1,tank_sys.Cv);
+    itm_out = valve(medium,...
+        tank_mdot_test,...
+        tank_sys.P1,...
+        tank_sys.T1,...
+        tank_sys.Cv,...
+        temp_interp);
     if length(itm_out) > 1 % If unchoked, store P2, T2
         tank_sys.Choked = "N";
         tank_sys.P2 = itm_out(1);
         inj_sys.P1(1) = tank_sys.P2;
         ig_sys.P1(1) = tank_sys.P2;
-        if isothermal % Isothermal or isentropic temp correlation
-            inj_sys.T1(1) = tank_sys.T1;
-            ig_sys.T1(1) = tank_sys.T1;
-        else
-            tank_sys.T2 = itm_out(2);
-            inj_sys.T1(1) = tank_sys.T2;
-            ig_sys.T1(1) = tank_sys.T2;
-        end
+        tank_sys.T2 = itm_out(2);
+        inj_sys.T1(1) = tank_sys.T2;
+        ig_sys.T1(1) = tank_sys.T2;
     else % if choked, log choke location, step back, and refine step size
         tank_sys.Choked = "Y";
         inj_sys.Choked = repelem("N",n_inj_pt)';
@@ -173,21 +174,35 @@ while true
         % Calculate P2, T2 from P1, T1, and check for choking
         % All flow device codes assume isentropic temp relations
         if inj_sys.Type(itm) == "valve"
-            itm_out = valve(medium,inj_mdot_test,inj_sys.P1(itm),inj_sys.T1(itm),inj_sys.Cv(itm));
+            itm_out = valve(medium,...
+                inj_mdot_test,...
+                inj_sys.P1(itm),...
+                inj_sys.T1(itm),...
+                inj_sys.Cv(itm),...
+                temp_interp);
         elseif inj_sys.Type(itm) == "regulator"
-            itm_out = regulator(medium,inj_mdot_test,inj_sys.P1(itm),inj_sys.T1(itm),inj_sys.Cv(itm),inj_sys.RegP2(itm),inj_sys.RegDroop(itm));
+            itm_out = regulator(medium,...
+                inj_mdot_test,...
+                inj_sys.P1(itm),...
+                inj_sys.T1(itm),...
+                inj_sys.Cv(itm),...
+                inj_sys.RegP2(itm),...
+                inj_sys.RegDroop(itm),...
+                temp_interp);
         elseif inj_sys.Type(itm) == "orifice"
-            itm_out = orifice(medium,inj_mdot_test,inj_sys.P1(itm),inj_sys.T1(itm),inj_sys.Cd(itm),inj_sys.A(itm)); 
+            itm_out = orifice(medium,...
+                inj_mdot_test,...
+                inj_sys.P1(itm),...
+                inj_sys.T1(itm),...
+                inj_sys.Cd(itm),...
+                inj_sys.A(itm),...
+                temp_interp); 
         end
 
         % If unchoked, add P2, T2 to system table
         if length(itm_out) > 1
             inj_sys.P2(itm) = itm_out(1);
-            if isothermal % Isothermal or isentropic temp correlation
-                inj_sys.T2(itm) = inj_sys.T1(itm);
-            else
-                inj_sys.T2(itm) = itm_out(2);
-            end
+            inj_sys.T2(itm) = itm_out(2);
         else % if choked, log choke location
             inj_sys.Choked = repelem("N",n_inj_pt)';
             inj_sys.Choked(itm) = "Y";
@@ -209,21 +224,35 @@ while true
         % Calculate P2, T2 from P1, T1, and check for choking
         % All flow device codes assume isentropic temp relations
         if ig_sys.Type(itm) == "valve"
-            itm_out = valve(medium,ig_mdot_test,ig_sys.P1(itm),ig_sys.T1(itm),ig_sys.Cv(itm));
+            itm_out = valve(medium,...
+                ig_mdot_test,...
+                ig_sys.P1(itm),...
+                ig_sys.T1(itm),...
+                ig_sys.Cv(itm),...
+                temp_interp);
         elseif ig_sys.Type(itm) == "regulator"
-            itm_out = regulator(medium,ig_mdot_test,ig_sys.P1(itm),ig_sys.T1(itm),ig_sys.Cv(itm),ig_sys.RegP2(itm),ig_sys.RegDroop(itm));
+            itm_out = regulator(medium,...
+                ig_mdot_test,...
+                ig_sys.P1(itm),...
+                ig_sys.T1(itm),...
+                ig_sys.Cv(itm),...
+                ig_sys.RegP2(itm),...
+                ig_sys.RegDroop(itm),...
+                temp_interp);
         elseif ig_sys.Type(itm) == "orifice"
-            itm_out = orifice(medium,ig_mdot_test,ig_sys.P1(itm),ig_sys.T1(itm),ig_sys.Cd(itm),ig_sys.A(itm)); 
+            itm_out = orifice(medium,...
+                ig_mdot_test,...
+                ig_sys.P1(itm),...
+                ig_sys.T1(itm),...
+                ig_sys.Cd(itm),...
+                ig_sys.A(itm),...
+                temp_interp); 
         end
 
         % If unchoked, add P2, T2 to system table
         if length(itm_out) > 1
             ig_sys.P2(itm) = itm_out(1);
-            if isothermal % Isothermal or isentropic temp correlation
-                ig_sys.T2(itm) = ig_sys.T1(itm);
-            else
-                ig_sys.T2(itm) = itm_out(2);
-            end
+            ig_sys.T2(itm) = itm_out(2);
         else % if choked, log choke location
             ig_sys.Choked = repelem("N",n_ig_pt)';
             ig_sys.Choked(itm) = "Y";
@@ -239,15 +268,15 @@ while true
     
     %% Update Step Sizes depending on choke condition
     if inj_choked % If choked, step back & refine step size
-        inj_mdot_test = max([inj_mdot_test - inj_mdot_step 0]);% Prevent negative mdot
         inj_mdot_step = inj_mdot_step*inj_step_coef;
+        inj_mdot_test = max([inj_mdot_test - inj_mdot_step 0]);% Prevent negative mdot
     else % else step forward
         inj_mdot_test = inj_mdot_test + inj_mdot_step;
     end
     
     if ig_choked % If choked, step back & refine step size
-        ig_mdot_test = max([ig_mdot_test - ig_mdot_step 0]);% Prevent negative mdot
         ig_mdot_step = ig_mdot_step*ig_step_coef;
+        ig_mdot_test = max([ig_mdot_test - ig_mdot_step 0]);% Prevent negative mdot
     else % else step forward
         ig_mdot_test = ig_mdot_test + ig_mdot_step;
     end

@@ -98,23 +98,24 @@ n_parts = n_ig_pt;
 % n_parts = n_inj_pt;
 
 
+% Initial tank parameters
+V_tank = 0.049;% m^3, Standard K cylinder volume is 49 L
+Ptank = convpres(2400,"psi","Pa");% Pa
+Ttank = 273.15+25;% K
+rhotank = PREoS(medium,"rho",Ptank,Ttank);% kg/m^3
+
+
 %% Simulation Setup
-% Isothermal or isentropic temp correlation - isothermal most conservative
-% on mass flow, isentropic most conservative on condensation & temps
-isothermal = true;
+% Temperature correlation
+temp_interp = "isothermal";% Neglect Temperature Changes
+% temp_interp = "adiabatic";% Isenthalpic (Adiabatic)
+% temp_interp = "isentropic";% Maximum Temperature Change
 
 
 % Termination time, time step
 t_step = 0.25;% sec
 t_stop = 15;% sec
 n_steps = t_stop/t_step+1;
-
-
-% Initial tank parameters
-V_tank = 0.049;% m^3, Standard K cylinder volume is 49 L
-Ptank0 = convpres(2400,"psi","Pa");% Pa
-Ttank0 = 273.15+25;% K
-rhotank0 = PREoS(medium,"rho",Ptank0,Ttank0);% kg/m^3
 
 
 % Assemble logging table from part names, to logtab P&T at outlet of each
@@ -130,17 +131,8 @@ logtab = table('Size',[n_steps length(varnames)],...
 logtab.t(1) = 0;
 
 
-% Initialize tank conditions
-Ptank = Ptank0;
-Ttank = Ttank0;
-rhotank = rhotank0;
-
-
-% Add waitbar
-wbar = waitbar(0,'Running Simulation');
-
-
 %% Iterate on tank conditions until t_stop
+wbar = waitbar(0,'Running Simulation');
 for itr=1:n_steps
 
 % Find mdot for given tank conditions
@@ -167,21 +159,35 @@ while true
         % Calculate P2, T2 from P1, T1, and check for choking
         % All flow device codes assume isentropic temp relations
         if systab.Type(itm) == "valve"
-            itm_out = valve(medium,mdot_test,systab.P1(itm),systab.T1(itm),systab.Cv(itm));
+            itm_out = valve(medium,...
+                mdot_test,...
+                systab.P1(itm),...
+                systab.T1(itm),...
+                systab.Cv(itm),...
+                temp_interp);
         elseif systab.Type(itm) == "regulator"
-            itm_out = regulator(medium,mdot_test,systab.P1(itm),systab.T1(itm),systab.Cv(itm),systab.RegP2(itm),systab.RegDroop(itm));
+            itm_out = regulator(medium,...
+                mdot_test,...
+                systab.P1(itm),...
+                systab.T1(itm),...
+                systab.Cv(itm),...
+                systab.RegP2(itm),...
+                systab.RegDroop(itm),...
+                temp_interp);
         elseif systab.Type(itm) == "orifice"
-            itm_out = orifice(medium,mdot_test,systab.P1(itm),systab.T1(itm),systab.Cd(itm),systab.A(itm)); 
+            itm_out = orifice(medium,...
+                mdot_test,...
+                systab.P1(itm),...
+                systab.T1(itm),...
+                systab.Cd(itm),...
+                systab.A(itm),...
+                temp_interp); 
         end
 
         % If unchoked, add P2, T2 to system table
         if length(itm_out) > 1
             systab.P2(itm) = itm_out(1);
-            if isothermal
-                systab.T2(itm) = systab.T1(itm);
-            else
-                systab.T2(itm) = itm_out(2);
-            end
+            systab.T2(itm) = itm_out(2);
         else % if choked, get output mdot & log choke location
             choked = true;
             systab.Choked = repelem("N",n_parts)';
@@ -199,8 +205,8 @@ while true
     % If choked, go back 1 step & refine step size to "sneak up" on choked
     % condition. If not choked, continue with same step size.
     if choked
-        mdot_test = mdot_test - mdot_step;
         mdot_step = mdot_step*0.5;
+        mdot_test = max([mdot_test - mdot_step 0]);
     else
         mdot_test = mdot_test + mdot_step;
     end

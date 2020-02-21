@@ -1,9 +1,13 @@
-function output = orifice(medium, mdot, P1, T1, Cd, A)
+function output = orifice(medium, mdot, P1, T1, Cd, A, temp_interp)
 % orifice Outlet P & T
-%   output = orifice(medium, mdot, P1, T1, Cd, A) Calculates pressure and
-%   temperature drop across a flow control device defined by its discharge
-%   coefficient Cd and orifice area A. If orifice is choked, returns choked
-%   mass flow rate instead of pressure and temperature downstream.
+%   output = orifice(medium, mdot, P1, T1, Cd, A, temp_interp) Calculates 
+%   pressure and temperature drop across a flow control device defined by 
+%   its discharge coefficient Cd and orifice area A. If orifice is choked, 
+%   returns choked mass flow rate instead of pressure and temperature.
+%
+%   temp_interp = "isothermal", "adiabatic", "isentropic" specifies the
+%   method used to find the temperature downstream of the orifice given the
+%   pressure drop
 %
 %   Formula for dP from Cd, A from Fox & McDonald's Introduction to Fluid
 %   Mechanics (8e) Section 8.10: Restriction Flow Meters for Internal 
@@ -32,7 +36,9 @@ function output = orifice(medium, mdot, P1, T1, Cd, A)
         % mdot = Cd*A*sqrt(2*rho1*(P1-P2))
         P2 = P1 - (mdot/(Cd*A))^2/(2*rho1);
         % Calculate outlet temperature, assuming isentropic expansion
-        T2 = T1*(P2/P1)^((medium.gam-1)/medium.gam);
+%         T2 = T1*(P2/P1)^((medium.gam-1)/medium.gam);
+        % Calculate outlet temp using desired method
+        T2 = T2_interp(medium, P1, T1, P2, temp_interp);
         output = [P2, T2];
         
     end

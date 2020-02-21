@@ -1,9 +1,13 @@
-function output = valve(medium, mdot, P1, T1, Cv)
+function output = valve(medium, mdot, P1, T1, Cv, temp_interp)
 % valve Outlet P & T
-%   [P2, T2] = valve(medium, mdot, P1, T1, Cv) Calculates pressure and
-%   temperature drop across a flow control device defined by its flow
-%   coefficient Cv. If valve is choked, returns choked mass flow rate 
-%   instead of pressure and temperature downstream.
+%   [P2, T2] = valve(medium, mdot, P1, T1, Cv, temp_interp) Calculates
+%   pressure and temperature drop across a flow control device defined by
+%   its flow coefficient Cv. If valve is choked, returns choked mass flow 
+%   rate instead of pressure and temperature downstream.
+%
+%   temp_interp = "isothermal", "adiabatic", "isentropic" specifies the
+%   method used to find the temperature downstream of the valve given the
+%   pressure drop
 %
 %   Formulas for dP based on Cv are from Swagelok Technical
 %   Bulletin MS-06-84-E Rev. 4 (2007), which is itself derived from ISA 
@@ -47,7 +51,9 @@ function output = valve(medium, mdot, P1, T1, Cv)
         dP = fminbnd(qfn,0,P1b*(1-1/1.8));% Golden section search for min
         P2 = P1-dP*1e5;% Pa, Converted from bar
         % Calculate outlet temperature, assuming isentropic expansion
-        T2 = T1*(P2/P1)^((medium.gam-1)/medium.gam);
+%         T2 = T1*(P2/P1)^((medium.gam-1)/medium.gam);
+        % Calculate outlet temp using desired method
+        T2 = T2_interp(medium, P1, T1, P2, temp_interp);
         output = [P2, T2];
         
     end

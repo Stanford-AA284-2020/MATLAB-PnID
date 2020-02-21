@@ -1,15 +1,15 @@
 function output = regulator(medium, mdot, P1, T1, Cv, RegP2, RegDroop, temp_interp)
 % regulator Outlet P & T
-%   output = regulator(medium, mdot, P1, T1, Cv, RegP2, RegDroop, 
-%   temp_interp) Calculates pressure and temperature drop across a flow 
-%   control device defined by its flow coefficient Cv, set outlet pressure 
-%   RegP2, and droop in terms of dP2/dmdot (Pa-s/kg). If regulator is 
+%   output = regulator(medium, mdot, P1, T1, Cv, RegP2, RegDroop, temp_interp) Calculates pressure and
+%   temperature drop across a flow control device defined by its flow
+%   coefficient Cv and regulated outlet pressure P2reg. If regulator is 
 %   choked, returns choked mass flow rate instead of pressure and 
-%   temperature downstream.
+%   temperature downstream. Droop is applied to P2reg based on mass flow
+%   rate, according to linear fit of Tescom catalog flow tables.
 %
 %   temp_interp = "isothermal", "adiabatic", "isentropic" specifies the
-%   method used to find the temperature downstream of the regulator given
-%   the pressure drop
+%   method used to find the temperature downstream of the orifice given the
+%   pressure drop
 %
 %   Formulas for dP based on Cv are from Swagelok Technical
 %   Bulletin MS-06-84-E Rev. 4 (2007), which is itself derived from ISA 
@@ -46,9 +46,7 @@ function output = regulator(medium, mdot, P1, T1, Cv, RegP2, RegDroop, temp_inte
         end
         
         % Calculate outlet temperature, assuming isentropic expansion
-%         T2 = T1*(P2/P1)^((medium.gam-1)/medium.gam);
-        % Calculate outlet temp using desired method
-        T2 = T2_interp(medium, P1, T1, P2, temp_interp);
+        T2 = T1*(P2/P1)^((medium.gam-1)/medium.gam);
         output = [P2, T2];
         
     end
