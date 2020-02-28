@@ -8,7 +8,6 @@ FluidDatabase
 %% Load in Pc values & associated params
 PcTrends = readtable('PcTrends1inthroat.csv');
 PcTrends = [repelem({0},length(PcTrends{1,:}));PcTrends];
-% plot(PcTrends.mdotF,PcTrends.Pc)
 % Linear Fit to get Pc from mdot
 mdotO2Pc = @(mdot) interp1(PcTrends.mdotO,PcTrends.Pc,mdot);
 Pc2mdotF = @(Pc) interp1(PcTrends.Pc,PcTrends.mdotF,Pc);

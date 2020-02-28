@@ -56,7 +56,7 @@ elseif out == "rho"
         output = rho;
         
     elseif length(Z) > 1% If vapor & liquid
-        warning('Mixed Phases')
+        warning('PREoS: Mixed Phases')
         % Vapor
         Vm_vap = max(Z)*R*T/P;% m^3/kmol
         rho_vap = Mw/Vm_vap;% kg/m^3
@@ -64,6 +64,9 @@ elseif out == "rho"
         Vm_liq = min(Z)*R*T/P;% m^3/kmol
         rho_liq = Mw/Vm_liq;% kg/m^3
         output = [rho_vap; rho_liq];
+        
+    elseif isempty(Z)
+        error('PREoS: Inconsistent Inputs, No solution for density')
         
     end
     

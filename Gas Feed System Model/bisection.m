@@ -3,7 +3,7 @@ function [newbracketL, newbracketU] = bisection(f, a, b, varargin)
 % Kochenderfer & Wheeler, Algorithms for Optimization, Algorithm 3.6
 
 if isempty(varargin)
-    eps = 1e-10;
+    eps = 1e-6;
 else
     eps = varargin{1};
 end
