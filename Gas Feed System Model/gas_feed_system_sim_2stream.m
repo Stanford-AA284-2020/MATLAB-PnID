@@ -40,20 +40,21 @@ tank_sys{1,1:2}=["HVF","valve"];tank_sys.Cv=HVF_Cv;
 inj_Pc_targ = 10e5;% Pa, 10 bar
 inj_mdot_targ = Pc2mdot(inj_Pc_targ);% kg/s
 
-RGMF_P2_reg = 55e5;% Pa
+RGMF_P2_reg = 71e5;% Pa
 RGMF_droop = 20349856;% Pa/(kg/s), Regulator outlet pressure droop from Tescom 26-2064D24A270 (catalog flow tables)
-orif_D = 3.8;% mm, Flow Control Orifice Size
+orif_D = 3.25;% mm, Flow Control Orifice Size
 orif_A = pi*(orif_D/(2*1000))^2;% m^2
-orif_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
+orif_Cd = 0.6;% Sharp-edged plate orifice in high-Re limit
 % A_injF = orifice_size(Methane,Pc2mdot(Pc_target),0.4,0.61,41.8e5,224);% m^2
-injF_A = 3.7e-5;% m^2
-injF_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
+injF_A = 1.91e-5;%3.7e-5;% m^2
+injF_Cd = 0.6;% Sharp-edged plate orifice in high-Re limit
+% injF_Cd = 0.8;% smooth manifold
 
 n_inj_pt = 6;
 inj_sys = make_systab(n_inj_pt);
 inj_sys.Choked = repelem("N",n_inj_pt)';
 inj_sys{1,1:2}=["RGMF","regulator"];inj_sys.Cv(1)=0.3;inj_sys.RegP2(1)=RGMF_P2_reg;inj_sys.RegDroop(1)=RGMF_droop;% Tescom 26-2095TA470AN
-inj_sys{2,1:2}=["BVMF1","valve"];inj_sys.Cv(2)=6.0;inj_sys.A(2)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
+inj_sys{2,1:2}=["BVMF1","valve"];inj_sys.Cv(2)=1.4;inj_sys.A(2)=pi*(0.187/2*0.0254)^2;% Swagelok SS-43GS4-SC11
 inj_sys{3,1:2}=["ORMF","orifice"];inj_sys.Cd(3)=orif_Cd;inj_sys.A(3)=orif_A;% Mass Flow Metering Orifice
 inj_sys{4,1:2}=["CKMF","valve"];inj_sys.Cv(4)=1.9;% CheckAll U3CSSTF0.500SS check valve
 inj_sys{5,1:2}=["BVMF2","valve"];inj_sys.Cv(5)=6.0;inj_sys.A(5)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
@@ -64,13 +65,13 @@ inj_sys{6,1:2}=["inj","orifice"];inj_sys.Cd(6)=injF_Cd;inj_sys.A(6)=injF_A;% Mai
 ig_Pc_targ = convpres(200,"psi","Pa");% Pa
 ig_mdot_targ = 0.00110279054076074;% kg/s
 
-RGIF_P2_reg = 34e5;% Pa
+RGIF_P2_reg = 29e5;% Pa
 RGIF_droop = 111924205;% Pa/(kg/s), Regulator outlet pressure droop from Victor SR4J
-meter_Cv = 0.0105;% Metering Valve Cv<=0.03
-igF_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
-igF_A = 7.59E-07;% m^2, From igniter spreadsheet
+meter_Cv = 0.0125;% Metering Valve Cv<=0.03
+% igF_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
+% igF_A = 7.59E-07;% m^2, From igniter spreadsheet
 
-n_ig_pt = 6;
+n_ig_pt = 5;
 ig_sys = make_systab(n_ig_pt);
 ig_sys.Choked = repelem("N",n_ig_pt)';
 ig_sys{1,1:2}=["RGIF","regulator"];ig_sys.Cv(1)=0.1147;ig_sys.RegP2(1)=RGIF_P2_reg;ig_sys.RegDroop(1)=RGIF_droop;% Victor SR4J
@@ -78,7 +79,7 @@ ig_sys{2,1:2}=["SVIF1","valve"];ig_sys.Cv(2)=0.04;ig_sys.A(2)=pi*(3/64/2*0.0254)
 ig_sys{3,1:2}=["NVIF","valve"];ig_sys.Cv(3)=meter_Cv;% Swagelok SS-4MG2-MH Flow Metering Valve, Vernier Handle
 ig_sys{4,1:2}=["CKIF","valve"];ig_sys.Cv(4)=1.9;% CheckAll U3CSSTF.500SS check valve
 ig_sys{5,1:2}=["SVIF2","valve"];ig_sys.Cv(5)=0.04;ig_sys.A(5)=pi*(3/64/2*0.0254)^2;% Parker Skinner 71216SN2FU00N0C111C2 Solenoid Valve
-ig_sys{6,1:2}=["ig","orifice"];ig_sys.Cd(6)=igF_Cd;ig_sys.A(6)=igF_A;% Igniter Methane Orifice
+% ig_sys{6,1:2}=["ig","orifice"];ig_sys.Cd(6)=igF_Cd;ig_sys.A(6)=igF_A;% Igniter Methane Orifice
 
 
 %% Simulation Setup
@@ -90,7 +91,7 @@ temp_interp = "adiabatic";% Isenthalpic (Adiabatic)
 
 % Termination time, time step
 t_step = 0.2;% sec
-t_stop = 15;% sec
+t_stop = 10;% sec
 n_steps = t_stop/t_step+1;
 
 
@@ -448,7 +449,7 @@ fprintf('Main Injector Outlet Pressure: %0.2f bar\n',logtab.inj_P2(1)/1e5)
 fprintf('Main Combustion Chamber Target Pressure: %0.2f bar\n\n',inj_Pc_targ/1e5)
 fprintf('Igniter mdot: %0.6f kg/s\n',logtab.ig_mdot(1))
 fprintf('Igniter Target mdot: %0.6f kg/s\n',ig_mdot_targ)
-fprintf('Igniter Outlet Pressure: %0.2f bar\n',logtab.ig_P2(1)/1e5)
+fprintf('Igniter Outlet Pressure: %0.2f bar\n',logtab{1,end-1}/1e5)
 fprintf('Igniter Chamber Target Pressure: %0.2f bar\n',ig_Pc_targ/1e5)
 disp(tank_sys)
 disp(inj_sys)

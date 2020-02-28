@@ -74,13 +74,13 @@ medium = Oxygen;
 ig_Pc_targ = convpres(200,"psi","Pa");% Pa
 ig_mdot_targ = 0.00496;% kg/s
 
-RGIF_P2_reg = 50e5;% Pa
+RGIF_P2_reg = 38e5;% Pa
 RGIF_droop = 111924205;% Pa/(kg/s), Regulator outlet pressure droop from Victor SR4J
-meter_Cv = 0.0274;% Metering Valve Cv<=0.03
-igF_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
-igF_A = 1.08E-06;% m^2, From igniter spreadsheet
+meter_Cv = 0.043;% Metering Valve Cv<=0.03
+% igF_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
+% igF_A = 1.08E-06;% m^2, From igniter spreadsheet
 
-n_ig_pt = 7;
+n_ig_pt = 6;
 ig_sys = make_systab(n_ig_pt);
 ig_sys.Choked = repelem("N",n_ig_pt)';
 ig_sys{1,1:2}=["HVIO","valve"];ig_sys.Cv(1)=0.69;% Sherwood GV Cylinder Valve
@@ -89,7 +89,7 @@ ig_sys{3,1:2}=["SVIO","valve"];ig_sys.Cv(3)=0.04;ig_sys.A(6)=pi*(3/64/2*0.0254)^
 ig_sys{4,1:2}=["NVIO","valve"];ig_sys.Cv(4)=meter_Cv;% Swagelok SS-4MG2-MH Flow Metering Valve, Vernier Handle
 ig_sys{5,1:2}=["CKIO","valve"];ig_sys.Cv(5)=1.9;% CheckAll U3CSSTF.500SS check valve
 ig_sys{6,1:2}=["BVIO","valve"];ig_sys.Cv(6)=6.0;ig_sys.A(6)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
-ig_sys{7,1:2}=["ig","orifice"];ig_sys.Cd(7)=igF_Cd;ig_sys.A(7)=igF_A;% Igniter Ox Orifice
+% ig_sys{7,1:2}=["ig","orifice"];ig_sys.Cd(7)=igF_Cd;ig_sys.A(7)=igF_A;% Igniter Ox Orifice
 
 
 systab = ig_sys;
@@ -114,7 +114,7 @@ temp_interp = "adiabatic";% Isenthalpic (Adiabatic)
 
 % Termination time, time step
 t_step = 0.25;% sec
-t_stop = 15;% sec
+t_stop = 10;% sec
 n_steps = t_stop/t_step+1;
 
 
@@ -338,6 +338,6 @@ hold off
 fprintf('Igniter mdot: %0.6f kg/s\n',logtab.mdot(1))
 fprintf('Igniter Target mdot: %0.6f kg/s\n',ig_mdot_targ)
 % % fprintf('Main Combustion Chamber Pressure at mdot: %0.2f bar\n',mdot2Pc(logtab.ig_mdot(1))/1e5)
-fprintf('Igniter Outlet Pressure: %0.2f bar\n',logtab.ig_P2(1)/1e5)
+fprintf('Igniter Outlet Pressure: %0.2f bar\n',logtab{1,end-1}/1e5)
 fprintf('Igniter Target Pressure: %0.2f bar\n',ig_Pc_targ/1e5)
 disp(systab)
