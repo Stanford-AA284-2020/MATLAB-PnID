@@ -46,11 +46,11 @@ orif_D = 3.25;% mm, Flow Control Orifice Size
 orif_A = pi*(orif_D/(2*1000))^2;% m^2
 orif_Cd = 0.6;% Sharp-edged plate orifice in high-Re limit
 % A_injF = orifice_size(Methane,Pc2mdot(Pc_target),0.4,0.61,41.8e5,224);% m^2
-injF_A = 1.91e-5;%3.7e-5;% m^2
+injF_A = 2e-5;%3.7e-5;% m^2
 injF_Cd = 0.6;% Sharp-edged plate orifice in high-Re limit
-% injF_Cd = 0.8;% smooth manifold
+elem_inlet_area = 6*pi*(0.0025/2)^2;
 
-n_inj_pt = 6;
+n_inj_pt = 9;
 inj_sys = make_systab(n_inj_pt);
 inj_sys.Choked = repelem("N",n_inj_pt)';
 inj_sys{1,1:2}=["RGMF","regulator"];inj_sys.Cv(1)=0.3;inj_sys.RegP2(1)=RGMF_P2_reg;inj_sys.RegDroop(1)=RGMF_droop;% Tescom 26-2095TA470AN
@@ -58,7 +58,10 @@ inj_sys{2,1:2}=["BVMF1","valve"];inj_sys.Cv(2)=1.4;inj_sys.A(2)=pi*(0.187/2*0.02
 inj_sys{3,1:2}=["ORMF","orifice"];inj_sys.Cd(3)=orif_Cd;inj_sys.A(3)=orif_A;% Mass Flow Metering Orifice
 inj_sys{4,1:2}=["CKMF","valve"];inj_sys.Cv(4)=1.9;% CheckAll U3CSSTF0.500SS check valve
 inj_sys{5,1:2}=["BVMF2","valve"];inj_sys.Cv(5)=6.0;inj_sys.A(5)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
-inj_sys{6,1:2}=["inj","orifice"];inj_sys.Cd(6)=injF_Cd;inj_sys.A(6)=injF_A;% Main Injector Methane Orifices
+inj_sys{6,1:2}=["mfldelbow","minorloss"];inj_sys.Cd(6)=0.07*15;inj_sys.A(6)=pi*(0.008/2)^2;% Bend from inlet line to manifold, K = f*Le/D
+inj_sys{7,1:2}=["mfldtaper","minorloss"];inj_sys.Cd(7)=0.05;inj_sys.A(7)=pi*(0.008/2)^2;% Manifold taper
+inj_sys{8,1:2}=["eleminlets","minorloss"];inj_sys.Cd(8)=0.04;inj_sys.A(8)=elem_inlet_area;% fuel element inlet
+inj_sys{9,1:2}=["inj","orifice"];inj_sys.Cd(9)=injF_Cd;inj_sys.A(9)=injF_A;% Main Injector Methane Orifices
 
 
 % IGNITER
@@ -197,7 +200,15 @@ while true
                 inj_sys.T1(itm),...
                 inj_sys.Cd(itm),...
                 inj_sys.A(itm),...
-                temp_interp); 
+                temp_interp);
+        elseif inj_sys.Type(itm) == "minorloss"
+            itm_out = minorloss(medium,...
+                inj_mdot_test,...
+                inj_sys.P1(itm),...
+                inj_sys.T1(itm),...
+                inj_sys.Cd(itm),...
+                inj_sys.A(itm),...
+                temp_interp);
         end
 
         % If unchoked, add P2, T2 to system table
@@ -247,7 +258,15 @@ while true
                 ig_sys.T1(itm),...
                 ig_sys.Cd(itm),...
                 ig_sys.A(itm),...
-                temp_interp); 
+                temp_interp);
+        elseif ig_sys.Type(itm) == "minorloss"
+            itm_out = minorloss(medium,...
+                ig_mdot_test,...
+                ig_sys.P1(itm),...
+                ig_sys.T1(itm),...
+                ig_sys.Cd(itm),...
+                ig_sys.A(itm),...
+                temp_interp);
         end
 
         % If unchoked, add P2, T2 to system table
