@@ -37,7 +37,7 @@ D_Oxelem = sqrt(A_Oxelem/pi)*2% m
 ID_CH4elem = D_Oxelem + 2*minwall
 OD_CH4elem = ID_CH4elem + 2*mingap*1.2% extra margin on min gap to avoid plugging
 A_CH4elem = pi*(OD_CH4elem^2 - ID_CH4elem^2)/4;
-A_CH4 = A_CH4elem*n_elem;
+A_CH4 = A_CH4elem*n_elem
 % A_CH4 = inj_sys.A(end);% Get directly from system
 % A_CH4elem = A_CH4/n_elem;
 
@@ -45,8 +45,8 @@ rho_Ox = zeros(length(logtab.t),1);
 rho_CH4 = zeros(length(logtab.t),1);
 mdot_Ox = zeros(length(logtab.t),1);
 tb = zeros(length(logtab.t),1);
-V_Ox = zeros(length(logtab.t),1);
-V_CH4 = zeros(length(logtab.t),1);
+% V_Ox = zeros(length(logtab.t),1);
+% V_CH4 = zeros(length(logtab.t),1);
 t_Ox = [0:0.05:10]';% time steps for ox sim
 t_CH4 = logtab.t;
 for step = 1:length(t_CH4)
@@ -68,7 +68,7 @@ J = (rho_CH4.*V_CH4.^2)./(rho_Ox.*V_Ox.^2);
 
 % tb = (D_Oxelem/2)./(V_CH4 - V_Ox) .* sqrt(rho_Ox./rho_CH4);
 % Lb = tb.*V_CH4;
-Lb = 25*D_Oxelem./J.^-0.2;
+Lb = 25*D_Oxelem./J.^0.2;
 
 subplot(1,3,1)
 plot(t_CH4,VR,'-k','DisplayName','Velocity Ratio')
