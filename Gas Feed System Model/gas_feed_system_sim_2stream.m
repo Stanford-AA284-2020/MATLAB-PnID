@@ -40,13 +40,13 @@ tank_sys{1,1:2}=["HVF","valve"];tank_sys.Cv=HVF_Cv;
 inj_Pc_targ = 10e5;% Pa, 10 bar
 inj_mdot_targ = Pc2mdot(inj_Pc_targ);% kg/s
 
-RGMF_P2_reg = 71e5;% Pa
+RGMF_P2_reg = 60e5;% Pa
 RGMF_droop = 20349856;% Pa/(kg/s), Regulator outlet pressure droop from Tescom 26-2064D24A270 (catalog flow tables)
-orif_D = 3.25;% mm, Flow Control Orifice Size
+orif_D = 3.65;% mm, Flow Control Orifice Size
 orif_A = pi*(orif_D/(2*1000))^2;% m^2
 orif_Cd = 0.6;% Sharp-edged plate orifice in high-Re limit
 % A_injF = orifice_size(Methane,Pc2mdot(Pc_target),0.4,0.61,41.8e5,224);% m^2
-injF_A = 2e-5;%3.7e-5;% m^2
+injF_A = 3.965e-5;%3.7e-5;% m^2
 injF_Cd = 0.6;% Sharp-edged plate orifice in high-Re limit
 elem_inlet_area = 6*pi*(0.0025/2)^2;
 
