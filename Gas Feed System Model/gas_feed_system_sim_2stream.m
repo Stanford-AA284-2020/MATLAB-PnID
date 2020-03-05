@@ -40,7 +40,7 @@ tank_sys{1,1:2}=["HVF","valve"];tank_sys.Cv=HVF_Cv;
 inj_Pc_targ = 10e5;% Pa, 10 bar
 inj_mdot_targ = Pc2mdot(inj_Pc_targ);% kg/s
 
-RGMF_P2_reg = 60e5;% Pa
+RGMF_P2_reg = 50e5;% Pa
 RGMF_droop = 20349856;% Pa/(kg/s), Regulator outlet pressure droop from Tescom 26-2064D24A270 (catalog flow tables)
 orif_D = 3.65;% mm, Flow Control Orifice Size
 orif_A = pi*(orif_D/(2*1000))^2;% m^2
@@ -55,7 +55,8 @@ inj_sys = make_systab(n_inj_pt);
 inj_sys.Choked = repelem("N",n_inj_pt)';
 inj_sys{1,1:2}=["RGMF","regulator"];inj_sys.Cv(1)=0.3;inj_sys.RegP2(1)=RGMF_P2_reg;inj_sys.RegDroop(1)=RGMF_droop;% Tescom 26-2095TA470AN
 inj_sys{2,1:2}=["BVMF1","valve"];inj_sys.Cv(2)=1.4;inj_sys.A(2)=pi*(0.187/2*0.0254)^2;% Swagelok SS-43GS4-SC11
-inj_sys{3,1:2}=["ORMF","orifice"];inj_sys.Cd(3)=orif_Cd;inj_sys.A(3)=orif_A;% Mass Flow Metering Orifice
+% inj_sys{3,1:2}=["ORMF","orifice"];inj_sys.Cd(3)=orif_Cd;inj_sys.A(3)=orif_A;% Mass Flow Metering Orifice
+inj_sys{3,1:2}=["NVMF","valve"];inj_sys.Cv(3)=0.73;% Swagelok SS-1RM4-F4 needle valve, Cv <=0.73
 inj_sys{4,1:2}=["CKMF","valve"];inj_sys.Cv(4)=1.9;% CheckAll U3CSSTF0.500SS check valve
 inj_sys{5,1:2}=["BVMF2","valve"];inj_sys.Cv(5)=6.0;inj_sys.A(5)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
 inj_sys{6,1:2}=["mfldelbow","minorloss"];inj_sys.Cd(6)=0.07*15;inj_sys.A(6)=pi*(0.008/2)^2;% Bend from inlet line to manifold, K = f*Le/D
