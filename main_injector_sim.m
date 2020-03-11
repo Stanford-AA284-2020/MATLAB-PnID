@@ -71,14 +71,17 @@ J = (rho_CH4.*V_CH4.^2)./(rho_Ox.*V_Ox.^2);
 Lb = 25*D_Oxelem./J.^0.2;
 
 subplot(1,3,1)
-plot(t_CH4,VR,'-k','DisplayName','Velocity Ratio')
+plot(t_CH4,VR,'-k','LineWidth',2,'DisplayName','Velocity Ratio')
 title('Velocity Ratio')
+xlabel('Time, s')
 subplot(1,3,2)
-plot(t_CH4,J,'--k','DisplayName','Momentum Flux Ratio')
+plot(t_CH4,J,'-k','LineWidth',2,'DisplayName','Momentum Flux Ratio')
 title('Momentum Flux Ratio')
+xlabel('Time, s')
 subplot(1,3,3)
-plot(t_CH4,Lb,':k','DisplayName','Jet Breakup Distance')
-title('Jet Breakup Distance')
+plot(t_CH4,Lb,'-k','LineWidth',2,'DisplayName','Jet Breakup Distance')
+title('Jet Breakup Distance (m)')
+xlabel('Time, s')
 
 function n = O2DynVisc(T,rhoi)
     rho = rhoi/1e3;% kg/m3 -> g/cm3
