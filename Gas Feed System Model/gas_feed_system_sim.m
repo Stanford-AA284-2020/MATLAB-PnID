@@ -21,51 +21,51 @@ make_systab = @(n_parts) table('Size',[n_parts 12],...
     'VariableNames',{'PartName','Type','Cv','RegP2','RegDroop','Cd','A','P1','P2','T1','T2','Choked'});
 
 
-% % IGNITER OXYGEN
-% medium = Oxygen;
-% ig_Pc_targ = convpres(200,"psi","Pa");% Pa
-% ig_mdot_targ = 0.00496;% kg/s
-% 
-% RGIF_P2_reg = 38e5;% Pa
-% RGIF_droop = 111924205;% Pa/(kg/s), Regulator outlet pressure droop from Victor SR4J
-% meter_Cv = 0.043;% Metering Valve Cv<=0.03
-% % igF_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
-% % igF_A = 1.08E-06;% m^2, From igniter spreadsheet
-% 
-% n_ig_pt = 6;
-% ig_sys = make_systab(n_ig_pt);
-% ig_sys.Choked = repelem("N",n_ig_pt)';
-% ig_sys{1,1:2}=["HVIO","valve"];ig_sys.Cv(1)=0.69;% Sherwood GV Cylinder Valve
-% ig_sys{2,1:2}=["RGIO","regulator"];ig_sys.Cv(2)=0.1147;ig_sys.RegP2(2)=RGIF_P2_reg;ig_sys.RegDroop(2)=RGIF_droop;% Victor SR4J
-% ig_sys{3,1:2}=["SVIO","valve"];ig_sys.Cv(3)=0.04;ig_sys.A(6)=pi*(3/64/2*0.0254)^2;% Parker Skinner 71216SN2FU00N0C111C2 Solenoid Valve
-% ig_sys{4,1:2}=["NVIO","valve"];ig_sys.Cv(4)=meter_Cv;% Swagelok SS-4MG2-MH Flow Metering Valve, Vernier Handle
-% ig_sys{5,1:2}=["CKIO","valve"];ig_sys.Cv(5)=1.9;% CheckAll U3CSSTF.500SS check valve
-% ig_sys{6,1:2}=["BVIO","valve"];ig_sys.Cv(6)=6.0;ig_sys.A(6)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
-% % ig_sys{7,1:2}=["ig","orifice"];ig_sys.Cd(7)=igF_Cd;ig_sys.A(7)=igF_A;% Igniter Ox Orifice
+% IGNITER OXYGEN
+medium = Oxygen;
+ig_Pc_targ = convpres(200,"psi","Pa");% Pa
+ig_mdot_targ = 0.00496;% kg/s
+
+RGIF_P2_reg = 38e5;% Pa
+RGIF_droop = 111924205;% Pa/(kg/s), Regulator outlet pressure droop from Victor SR4J
+meter_Cv = 0.043;% Metering Valve Cv<=0.03
+% igF_Cd = 0.61;% Sharp-edged plate orifice in high-Re limit
+% igF_A = 1.08E-06;% m^2, From igniter spreadsheet
+
+n_ig_pt = 6;
+ig_sys = make_systab(n_ig_pt);
+ig_sys.Choked = repelem("N",n_ig_pt)';
+ig_sys{1,1:2}=["HVIO","valve"];ig_sys.Cv(1)=0.69;% Sherwood GV Cylinder Valve
+ig_sys{2,1:2}=["RGIO","regulator"];ig_sys.Cv(2)=0.1147;ig_sys.RegP2(2)=RGIF_P2_reg;ig_sys.RegDroop(2)=RGIF_droop;% Victor SR4J
+ig_sys{3,1:2}=["SVIO","valve"];ig_sys.Cv(3)=0.04;ig_sys.A(6)=pi*(3/64/2*0.0254)^2;% Parker Skinner 71216SN2FU00N0C111C2 Solenoid Valve
+ig_sys{4,1:2}=["NVIO","valve"];ig_sys.Cv(4)=meter_Cv;% Swagelok SS-4MG2-MH Flow Metering Valve, Vernier Handle
+ig_sys{5,1:2}=["CKIO","valve"];ig_sys.Cv(5)=1.9;% CheckAll U3CSSTF.500SS check valve
+ig_sys{6,1:2}=["BVIO","valve"];ig_sys.Cv(6)=0.04;ig_sys.A(6)=pi*(0.281/2*0.0254)^2;% Swagelok SS-44S6
+% ig_sys{7,1:2}=["ig","orifice"];ig_sys.Cd(7)=igF_Cd;ig_sys.A(7)=igF_A;% Igniter Ox Orifice
 
 
 % NITROGEN PURGE
-medium = Nitrogen;
-RGN_P2_reg = convpres(1000,"psi","Pa");% Pa
-RGN_droop = 111924205;% Pa/(kg/s), Regulator outlet pressure droop from Victor SR4J
-meter_Cv = 0.008;% Medium-Flow Metering Valve Cv<=0.03
+% medium = Nitrogen;
+% RGN_P2_reg = convpres(1000,"psi","Pa");% Pa
+% RGN_droop = 111924205;% Pa/(kg/s), Regulator outlet pressure droop from Victor SR4J
+% meter_Cv = 0.008;% Medium-Flow Metering Valve Cv<=0.03
+% 
+% n_n2_pt = 5;
+% n2_sys = make_systab(n_n2_pt);
+% n2_sys.Choked = repelem("N",n_n2_pt)';
+% n2_sys{1,1:2}=["HVN","valve"];n2_sys.Cv(1)=0.69;% Sherwood GV Cylinder Valve
+% n2_sys{2,1:2}=["RGN","regulator"];n2_sys.Cv(2)=0.1147;n2_sys.RegP2(2)=RGN_P2_reg;n2_sys.RegDroop(2)=RGN_droop;% Victor SR4J
+% n2_sys{3,1:2}=["SVN","valve"];n2_sys.Cv(3)=0.04;n2_sys.A(3)=pi*(3/64/2*0.0254)^2;% Parker Skinner 71216SN2FU00N0C111C2 Solenoid Valve
+% n2_sys{4,1:2}=["NVN","valve"];n2_sys.Cv(4)=meter_Cv;% Swagelok SS-4MG2-MH Flow Metering Valve, Vernier Handle
+% n2_sys{5,1:2}=["CKNXX","valve"];n2_sys.Cv(5)=1.9*4;% CheckAll U3CSSTF.500SS check valve
 
-n_n2_pt = 5;
-n2_sys = make_systab(n_n2_pt);
-n2_sys.Choked = repelem("N",n_n2_pt)';
-n2_sys{1,1:2}=["HVN","valve"];n2_sys.Cv(1)=0.69;% Sherwood GV Cylinder Valve
-n2_sys{2,1:2}=["RGN","regulator"];n2_sys.Cv(2)=0.1147;n2_sys.RegP2(2)=RGN_P2_reg;n2_sys.RegDroop(2)=RGN_droop;% Victor SR4J
-n2_sys{3,1:2}=["SVN","valve"];n2_sys.Cv(3)=0.04;n2_sys.A(3)=pi*(3/64/2*0.0254)^2;% Parker Skinner 71216SN2FU00N0C111C2 Solenoid Valve
-n2_sys{4,1:2}=["NVN","valve"];n2_sys.Cv(4)=meter_Cv;% Swagelok SS-4MG2-MH Flow Metering Valve, Vernier Handle
-n2_sys{5,1:2}=["CKNXX","valve"];n2_sys.Cv(5)=1.9*4;% CheckAll U3CSSTF.500SS check valve
 
-
-% systab = ig_sys;
-% n_parts = n_ig_pt;
+systab = ig_sys;
+n_parts = n_ig_pt;
 % systab = inj_sys;
 % n_parts = n_inj_pt;
-systab = n2_sys;
-n_parts = n_n2_pt;
+% systab = n2_sys;
+% n_parts = n_n2_pt;
 
 
 % Initial tank parameters
@@ -78,8 +78,8 @@ rhotank = PREoS(medium,"rho",Ptank,Ttank);% kg/m^3
 %% Simulation Setup
 % Temperature correlation
 % temp_interp = "isothermal";% Neglect Temperature Changes
-% temp_interp = "adiabatic";% Isenthalpic (Adiabatic)
-temp_interp = "isentropic";% Maximum Temperature Change
+temp_interp = "adiabatic";% Isenthalpic (Adiabatic)
+% temp_interp = "isentropic";% Maximum Temperature Change
 
 
 % Termination time, time step
